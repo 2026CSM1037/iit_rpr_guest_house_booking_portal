@@ -13,7 +13,7 @@ export default function DashboardPage() {
   return (
     <div className="card">
       <h1>My Approvals</h1>
-      <p className="mute">Welcome, {authority?.name}. Pending requests will appear here.</p>
+      <p className="mute">Welcome, {authority?.name}. Pending requests will appear here lol.</p>
     </div>
   );
 }
