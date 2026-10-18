@@ -101,7 +101,14 @@ export default function BookingPage() {
     const roomCharges = (selectedCategory?.rate ?? 0) * nights * roomCount;
 
     function updateField(name: keyof BookingForm, value: string | boolean) {
-        setForm((current) => ({ ...current, [name]: value }));
+        setForm((current) => {
+            const next = { ...current, [name]: value };
+            if (name === "payment" && value === "Self / Other") {
+                next.project = "";
+                next.approverEmail = "";
+            }
+            return next;
+        });
         setError("");
     }
 
@@ -148,13 +155,20 @@ export default function BookingPage() {
 
         if (step === 2) {
             const invalidGuest = form.guests.some(
-                (guest) => !guest.name || !guest.gender || !guest.age || !guest.relation || !guest.arrival || !guest.departure
+                (guest) => !guest.name.trim() || !guest.gender || !guest.age.trim() || !guest.relation
             );
             if (invalidGuest) return setError("Please complete the required details for every guest.");
-            const invalidDates = form.guests.some(
-                (guest) => new Date(guest.departure).getTime() <= new Date(guest.arrival).getTime()
-            );
-            if (invalidDates) return setError("Each check-out date/time must be after the check-in date/time.");
+
+            // The stay schedule is entered once for the booking, not once per guest.
+            const primaryGuest = form.guests[0];
+            if (!primaryGuest?.arrival || !primaryGuest?.departure) {
+                return setError("Please enter the check-in and check-out date/time.");
+            }
+            const arrival = new Date(primaryGuest.arrival).getTime();
+            const departure = new Date(primaryGuest.departure).getTime();
+            if (!Number.isFinite(arrival) || !Number.isFinite(departure) || departure <= arrival) {
+                return setError("Check-out date/time must be after the check-in date/time.");
+            }
         }
 
         if (step === 3 && !form.primaryIdFile) {
@@ -282,9 +296,9 @@ function StepOne({ form, updateField }: { form: BookingForm; updateField: (name:
                     <SelectField label="Category *" value={form.category} onChange={(value) => updateField("category", value)} options={CATEGORIES.map((item) => item.label)} required />
                     <SelectField label="Payment to be made by *" value={form.payment} onChange={(value) => updateField("payment", value)} options={["Institute Funds", "Project Funds", "Self / Other"]} required />
                     <Field label="Purpose of Visit *" value={form.purpose} onChange={(value) => updateField("purpose", value)} placeholder="Academic, research, conference, collaboration, etc." required />
-                    <Field label="Project No. / Budget Head / Other" value={form.project} onChange={(value) => updateField("project", value)} placeholder="Enter details where applicable" />
+                    <Field label="Project No. / Budget Head / Other" value={form.project} onChange={(value) => updateField("project", value)} placeholder={form.payment === "Self / Other" ? "Not applicable for Self / Other" : form.payment ? "Enter details where applicable" : "Select a payment method first"} disabled={!(["Institute Funds", "Project Funds"].includes(form.payment))} />
                     <SelectField label="Number of Rooms Required *" value={form.rooms} onChange={(value) => updateField("rooms", value)} options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]} required />
-                    <Field label="Approver Official Email" value={form.approverEmail} onChange={(value) => updateField("approverEmail", value)} placeholder="approver@iitrpr.ac.in" type="email" hint="Optional: used to notify the competent approver" />
+                    <Field label="Approver Official Email" value={form.approverEmail} onChange={(value) => updateField("approverEmail", value)} placeholder={form.payment === "Self / Other" ? "Not applicable for Self / Other" : form.payment ? "approver@iitrpr.ac.in" : "Select a payment method first"} type="email" hint="Optional: used to notify the competent approver" disabled={!(["Institute Funds", "Project Funds"].includes(form.payment))} />
                 </div>
             </section>
 
@@ -422,11 +436,11 @@ function UploadField({ title, fileName, onChange, required = false }: { title: s
     );
 }
 
-function Field({ label, value, onChange, placeholder, type = "text", required = false, hint }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean; hint?: string }) {
+function Field({ label, value, onChange, placeholder, type = "text", required = false, hint, disabled = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean; hint?: string; disabled?: boolean }) {
     return (
-        <label className="field">
+        <label className={`field${disabled ? " field-disabled" : ""}`}>
             <span>{label}</span>
-            <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type={type} required={required} />
+            <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type={type} required={required} disabled={disabled} />
             {hint && <small>{hint}</small>}
         </label>
     );
