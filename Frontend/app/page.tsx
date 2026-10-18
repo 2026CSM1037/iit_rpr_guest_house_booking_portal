@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
 export default function Home() {
-  redirect("/authority/login");
+  redirect("/user/book");
+  // redirect("/authority/login");
 }
