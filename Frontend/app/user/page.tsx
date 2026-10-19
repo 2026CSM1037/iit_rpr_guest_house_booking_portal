@@ -152,7 +152,7 @@ export default function HomePage() {
       </section>
 
       <section id="tariff" className="simple-section">
-        <h2>Guest House Charges and Categories</h2>
+        <h3>Guest House Charges and Categories</h3>
         <p>
           Review the applicable tariff, eligibility criteria, and approving
           authority before submitting your booking request.
@@ -194,13 +194,13 @@ export default function HomePage() {
         </div>
 
         <div className="tariff-notes">
-          <p><strong>1. GST:</strong> GST charges will be extra, as applicable.</p>
-          <p><strong>2. Internal bookings:</strong> No GST applies to internal bookings paid from Institute Funds.</p>
+          <p><strong>* GST:</strong> GST charges will be extra, as applicable.</p>
+          <p><strong>** Internal bookings:</strong> No GST applies to internal bookings paid from Institute Funds.</p>
           <p>
-            <strong>3. Institute/project funding:</strong> If payment is made from Institute or project funds, no bill will ordinarily be raised; the budget of the respective department/section will be deducted. For projects or other externally funded events, the budget will be deducted and deposited in the IRG. A bill may be raised on request by the guests, organizers, or PIs, as applicable.
+            <strong>*** Institute/project funding:</strong> If payment is made from Institute or project funds, no bill will ordinarily be raised; the budget of the respective department/section will be deducted. For projects or other externally funded events, the budget will be deducted and deposited in the IRG. A bill may be raised on request by the guests, organizers, or PIs, as applicable.
           </p>
           <p>
-            <strong>4. Supporting documents:</strong> Supporting documents and approval from the competent authority must be attached to the booking form wherever applicable.
+            <strong>**** Supporting documents:</strong> Supporting documents and approval from the competent authority must be attached to the booking form wherever applicable.
           </p>
         </div>
 
@@ -211,30 +211,32 @@ export default function HomePage() {
       </section>
 
       <section id="guidelines" className="simple-section">
-        <h2>Booking Guidelines</h2>
-        <div className="checkin-note">
-          <p><strong>Check-in time:</strong> 01:00 PM</p>
-          <p><strong>Check-out time:</strong> 11:00 AM</p>
-        </div>
+        <h3>Booking Guidelines</h3>
         <ol className="guidelines-list">
           {guidelines.map((guideline, index) => (
             <li key={`guideline-${index}`}>{guideline}</li>
           ))}
         </ol>
-        <p><strong>NOTE:</strong> The competent authority reserves the right to cancel, amend, or reschedule a booking.</p>
+        <div className="checkin-note">
+          <p><strong>Check-in time:</strong> 01:00 PM</p>
+          <p><strong>Check-out time:</strong> 11:00 AM</p>
+        </div>
+        <p>The competent authority reserves the right to cancel, amend, or reschedule a booking.</p>
       </section>
 
       <section id="contact" className="simple-section">
-        <h2>Contact Us</h2>
+        <h3>Contact Us</h3>
         <ul className="contact-details">
           <li><strong>Telephone:</strong> 01881-236951</li>
           <li>
             <strong>Email:</strong>{" "}
-            <a href="mailto:guesthouse@iitrpr.ac.in"> guesthouse@iitrpr.ac.in</a>
+            <a href="mailto:guesthouse@iitrpr.ac.in">guesthouse@iitrpr.ac.in</a>
           </li>
           <li>
             <strong>Website:</strong>{" "}
-            <a href="https://www.iitrpr.ac.in" target="_blank" rel="noreferrer"> www.iitrpr.ac.in</a>
+            <a href="https://www.iitrpr.ac.in" target="_blank" rel="noreferrer">
+              www.iitrpr.ac.in
+            </a>
           </li>
           <li>Rupnagar, Punjab - 140001, India</li>
         </ul>
