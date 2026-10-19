@@ -1,13 +1,3 @@
-"""
-IIT Ropar Guest House Booking Portal - backend (FastAPI)
-
-Three separate roles, each with its own Google sign-in, cookie and endpoints:
-  user          /user/auth/*    booking form, own bookings
-  authority     /auth/*         chairman -> warden -> dean approval chain
-  receptionist  /receptionist/* on-site check-in / check-out of booked requests
-
-Google Sheet tab = one row per booking. Files go to Drive, links go in the row.
-"""
 import io
 import json
 import math
@@ -32,7 +22,7 @@ from pydantic import BaseModel
 
 load_dotenv()
 
-# ================================================================ config
+# config
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID", "")
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID") or None
@@ -50,8 +40,7 @@ MAX_FILE_BYTES = 5 * 1024 * 1024
 ALLOWED_FILES = {".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 MAGIC = {".pdf": b"%PDF", ".jpg": b"\xff\xd8", ".jpeg": b"\xff\xd8", ".png": b"\x89PNG"}
 
-# Keyed by the category label before the " (" (matches CATEGORIES in Frontend/app/user/book/page.tsx).
-# Prices are decided here, never by the browser.
+
 RATES = {
     "Executive Suite — Category-A": 0,
     "Executive Suite — Category-B": 3500,
@@ -60,7 +49,7 @@ RATES = {
     "Business Room — Category B-2": 1200,
 }
 
-# ---- workflow --------------------------------------------------------------
+# workflow
 SUBMITTED = "Submitted"
 BOOKED = "Booked"
 REJECTED = "Rejected"
@@ -125,7 +114,7 @@ class ApiError(Exception):
         self.code, self.status = code, status
 
 
-# ================================================================ Google helpers
+# Google helpers
 _creds_cache = {}
 
 
@@ -210,7 +199,7 @@ def read_upload(upload: UploadFile):
     return ext, ALLOWED_FILES[ext], data
 
 
-# ================================================================ row helpers
+# row helpers
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -288,7 +277,7 @@ def to_api(r: dict, staff: bool) -> dict:
     }
 
 
-# ================================================================ sessions + auth
+# sessions + auth
 def set_session(resp: Response, cookie: str, payload: dict):
     resp.set_cookie(cookie, serializer.dumps(payload), max_age=SESSION_SECONDS, httponly=True,
                     samesite="lax", secure=COOKIE_SECURE, path="/")
@@ -395,7 +384,7 @@ def health():
     return {"ok": True}
 
 
-# ================================================================ user: bookings
+#  user: bookings
 class Guest(BaseModel):
     name: str = ""
     gender: str = ""
@@ -506,7 +495,7 @@ def my_booking(booking_id: str, user: dict = Depends(current_user)):
     return {"booking": to_api(r, False)}
 
 
-# ================================================================ authority: chairman -> warden -> dean
+# authority: chairman -> warden -> dean
 class DecisionIn(BaseModel):
     decision: str  # approve | reject | hold | resume
     remarks: str = ""
@@ -562,7 +551,7 @@ def authority_decide(booking_id: str, body: DecisionIn, authority: dict = Depend
     return {"bookingId": booking_id, "status": updates["Status"]}
 
 
-# ================================================================ receptionist: on-site check-in / out
+# receptionist: on-site check-in / out
 @app.get("/receptionist/bookings")
 def receptionist_bookings(scope: str = "active", receptionist: dict = Depends(current_receptionist)):
     """Only fully approved (Booked) requests. scope=active hides ones already checked out."""
