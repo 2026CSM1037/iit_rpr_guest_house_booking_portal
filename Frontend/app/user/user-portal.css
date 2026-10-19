@@ -33,18 +33,13 @@
   position: relative;
   display: grid;
   place-items: center;
-  background:
-    linear-gradient(180deg, rgba(0,45,100,.15), rgba(0,40,90,.68)),
-    radial-gradient(circle at 75% 35%, #8fc7f7 0 8%, transparent 9%),
-    linear-gradient(135deg, #9bd0f7 0%, #5da8e7 42%, #2478c8 43%, #1d5c99 100%);
-}.user-portal .hero-image-placeholder::before {
-  content: "";
-  position: absolute;
-  inset: 30% 10% 0;
-  background: linear-gradient(170deg, transparent 0 20%, rgba(255,255,255,.85) 21% 24%, transparent 25%),
-              linear-gradient(90deg, rgba(255,255,255,.85) 0 2%, transparent 2% 18%, rgba(255,255,255,.85) 18% 20%, transparent 20% 38%, rgba(255,255,255,.85) 38% 40%, transparent 40% 58%, rgba(255,255,255,.85) 58% 60%, transparent 60%);
-  opacity: .25;
-}.user-portal .hero-overlay { position: relative; z-index: 1; text-align: center; color: white; max-width: 720px; }.user-portal .hero-overlay h1 { font-size: clamp(38px, 5vw, 60px); margin: 0; letter-spacing: 1px; }.user-portal .hero-overlay h2 { font-size: clamp(28px, 4vw, 48px); margin: 4px 0 18px; }.user-portal .hero-overlay p { font-size: 18px; line-height: 1.5; margin: 0 auto 26px; }.user-portal .primary-button, .user-portal .secondary-button {
+  background-image:
+    linear-gradient(180deg, rgba(0,35,75,.30), rgba(0,28,65,.78)),
+    url("https://files.yappe.in/place/full/iit-ropar-guest-house-6381511.webp");
+  background-size: cover;
+  background-position: center 48%;
+  background-repeat: no-repeat;
+}.user-portal .hero-image-placeholder::before { content: none; }.user-portal .hero-overlay { position: relative; z-index: 1; text-align: center; color: white; max-width: 720px; }.user-portal .hero-overlay h1 { font-size: clamp(38px, 5vw, 60px); margin: 0; letter-spacing: 1px; }.user-portal .hero-overlay h2 { font-size: clamp(28px, 4vw, 48px); margin: 4px 0 18px; }.user-portal .hero-overlay p { font-size: 18px; line-height: 1.5; margin: 0 auto 26px; }.user-portal .primary-button, .user-portal .secondary-button {
   min-height: 46px; padding: 0 26px; border-radius: 6px; display: inline-flex;
   align-items: center; justify-content: center; gap: 9px; font-weight: 700; cursor: pointer;
   border: 1px solid var(--blue);
@@ -67,7 +62,7 @@
 }.user-portal .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; padding: 18px; }.user-portal .field { display: flex; flex-direction: column; gap: 7px; }.user-portal .field > span { font-weight: 700; font-size: 12px; }.user-portal .field input, .user-portal .field select {
   height: 42px; border: 1px solid #bdd6ef; border-radius: 5px; padding: 0 12px;
   background: white; color: #234b72; outline: none;
-}.user-portal .field input:focus, .user-portal .field select:focus { border-color: var(--blue); box-shadow: 0 0 0 2px #dceeff; }.user-portal .document-row { padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }.user-portal .upload-box {
+}.user-portal .field input:focus, .user-portal .field select:focus { border-color: var(--blue); box-shadow: 0 0 0 2px #dceeff; } .user-portal .field-disabled > span { color: #7d8fa4; } .user-portal .field input:disabled { background: #eef2f6; color: #7d8fa4; cursor: not-allowed; border-color: #d6dee7; }.user-portal .document-row { padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }.user-portal .upload-box {
   min-height: 90px; border: 1px dashed #9fc5e8; border-radius: 6px; padding: 15px;
   display: flex; flex-direction: column; gap: 8px; background: #fafdff;
 }.user-portal .upload-box span { font-weight: 700; font-size: 13px; }.user-portal .upload-box small { color: var(--muted); }.user-portal .checkbox-row { display: flex; gap: 10px; align-items: center; font-size: 13px; }.user-portal .summary-box {
