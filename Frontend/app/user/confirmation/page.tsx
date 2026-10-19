@@ -2,26 +2,23 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
-type Guest = { arrival?: string; departure?: string; name?: string };
-type Booking = {
-  bookingId?: string;
-  category?: string;
-  rooms?: string;
-  purpose?: string;
-  email?: string;
-  guests?: Guest[];
-};
+import { useRequireUser } from "@/lib/auth/UserAuth";
+import { bookingApi } from "@/lib/api/client";
+import type { Booking } from "@/lib/api/types";
 
 export default function ConfirmationPage() {
-  const [booking, setBooking] = useState<Booking>({});
+  const { status } = useRequireUser("/user/status");
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("guestHouseBooking");
-    if (saved) setBooking(JSON.parse(saved));
-  }, []);
+    if (status !== "authed") return;
+    const id = sessionStorage.getItem("gh_last_booking_id");
+    if (!id) { setFailed(true); return; }
+    bookingApi.get(id).then(setBooking).catch(() => setFailed(true));
+  }, [status]);
 
-  const primaryGuest = booking.guests?.[0];
+  if (status !== "authed") return <div className="page-shell"><p>Loading…</p></div>;
 
   return (
     <div className="page-shell centered-page">
@@ -33,17 +30,18 @@ export default function ConfirmationPage() {
 
       <section className="request-id-card">
         <span>Your Booking / Request ID</span>
-        <strong>{booking.bookingId || "GH2026001234"}</strong>
-        <button type="button" onClick={() => navigator.clipboard?.writeText(booking.bookingId || "")}>Copy ID</button>
+        <strong>{booking?.bookingId || (failed ? "—" : "Loading…")}</strong>
+        <button type="button" onClick={() => navigator.clipboard?.writeText(booking?.bookingId || "")}>Copy ID</button>
       </section>
 
       <section className="summary-panel">
         <h2>Booking Summary</h2>
-        <SummaryRow label="Check-in Date" value={formatDate(primaryGuest?.arrival)} />
-        <SummaryRow label="Check-out Date" value={formatDate(primaryGuest?.departure)} />
-        <SummaryRow label="Room Category" value={booking.category || "—"} />
-        <SummaryRow label="Number of Rooms" value={booking.rooms || "—"} />
-        <SummaryRow label="Purpose of Visit" value={booking.purpose || "—"} />
+        <SummaryRow label="Check-in Date" value={formatDate(booking?.arrival)} />
+        <SummaryRow label="Check-out Date" value={formatDate(booking?.departure)} />
+        <SummaryRow label="Room Category" value={booking?.category || "—"} />
+        <SummaryRow label="Number of Rooms" value={booking?.rooms || "—"} />
+        <SummaryRow label="Purpose of Visit" value={booking?.purpose || "—"} />
+        <SummaryRow label="Room Charges" value={booking ? `₹${booking.roomCharges.toLocaleString("en-IN")}` : "—"} />
       </section>
 
       <div className="info-alert">ⓘ Please save this ID for future reference. You can track your booking status using the Booking Status option.</div>

@@ -1,7 +1,18 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRequireUser } from "@/lib/auth/UserAuth";
+import { bookingApi } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/types";
+
+const SUBMIT_ERRORS: Record<string, string> = {
+    INVALID_INPUT: "Some details are missing or invalid. Please review every step and try again.",
+    INVALID_FILE_TYPE: "Only genuine PDF, JPG or PNG files are accepted.",
+    FILE_TOO_LARGE: "A file is larger than 5MB.",
+    NETWORK: "Unable to reach the server. Make sure the backend is running and try again.",
+    UNKNOWN: "We could not submit your request. Please try again.",
+};
 
 const CATEGORIES = [
     { value: "Executive Suite - Category-A", label: "Executive Suite — Category-A (Free)", rate: 0 },
@@ -77,9 +88,19 @@ const initialForm: BookingForm = {
 
 export default function BookingPage() {
     const router = useRouter();
+    const { status: authStatus, account } = useRequireUser("/user/book");
     const [step, setStep] = useState(1);
     const [form, setForm] = useState<BookingForm>(initialForm);
+    const [files, setFiles] = useState<{ primary: File | null; approval: File | null }>({ primary: null, approval: null });
+    const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
+
+    // the booking is always filed under the signed-in account's e-mail
+    useEffect(() => {
+        if (account) {
+            setForm((current) => ({ ...current, email: account.email, name: current.name || account.name }));
+        }
+    }, [account]);
 
     const selectedCategory = CATEGORIES.find((item) => item.label === form.category);
 
@@ -101,14 +122,7 @@ export default function BookingPage() {
     const roomCharges = (selectedCategory?.rate ?? 0) * nights * roomCount;
 
     function updateField(name: keyof BookingForm, value: string | boolean) {
-        setForm((current) => {
-            const next = { ...current, [name]: value };
-            if (name === "payment" && value === "Self / Other") {
-                next.project = "";
-                next.approverEmail = "";
-            }
-            return next;
-        });
+        setForm((current) => ({ ...current, [name]: value }));
         setError("");
     }
 
@@ -137,7 +151,16 @@ export default function BookingPage() {
     }
 
     function handleFile(event: ChangeEvent<HTMLInputElement>, field: "primaryIdFile" | "approvalFile") {
-        const file = event.target.files?.[0];
+        const file = event.target.files?.[0] ?? null;
+        const key = field === "primaryIdFile" ? "primary" : "approval";
+        if (file && file.size > 5 * 1024 * 1024) {
+            event.target.value = "";
+            setFiles((current) => ({ ...current, [key]: null }));
+            updateField(field, "");
+            setError("File is too large. Maximum size is 5MB.");
+            return;
+        }
+        setFiles((current) => ({ ...current, [key]: file }));
         updateField(field, file?.name ?? "");
     }
 
@@ -155,20 +178,13 @@ export default function BookingPage() {
 
         if (step === 2) {
             const invalidGuest = form.guests.some(
-                (guest) => !guest.name.trim() || !guest.gender || !guest.age.trim() || !guest.relation
+                (guest) => !guest.name || !guest.gender || !guest.age || !guest.relation || !guest.arrival || !guest.departure
             );
             if (invalidGuest) return setError("Please complete the required details for every guest.");
-
-            // The stay schedule is entered once for the booking, not once per guest.
-            const primaryGuest = form.guests[0];
-            if (!primaryGuest?.arrival || !primaryGuest?.departure) {
-                return setError("Please enter the check-in and check-out date/time.");
-            }
-            const arrival = new Date(primaryGuest.arrival).getTime();
-            const departure = new Date(primaryGuest.departure).getTime();
-            if (!Number.isFinite(arrival) || !Number.isFinite(departure) || departure <= arrival) {
-                return setError("Check-out date/time must be after the check-in date/time.");
-            }
+            const invalidDates = form.guests.some(
+                (guest) => new Date(guest.departure).getTime() <= new Date(guest.arrival).getTime()
+            );
+            if (invalidDates) return setError("Each check-out date/time must be after the check-in date/time.");
         }
 
         if (step === 3 && !form.primaryIdFile) {
@@ -178,26 +194,39 @@ export default function BookingPage() {
         setStep((current) => Math.min(4, current + 1));
     }
 
-    function submitBooking(event: FormEvent<HTMLFormElement>) {
+    async function submitBooking(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         if (!form.agreed) {
             setError("Please agree to the Guest House Terms & Conditions before submitting.");
             return;
         }
+        if (!files.primary) {
+            setError("Please attach the primary guest government photo ID proof.");
+            return;
+        }
 
-        const bookingId = `GH${new Date().getFullYear()}${String(Date.now()).slice(-6)}`;
-        const booking = {
-            ...form,
-            bookingId,
-            status: "Request Submitted",
-            submittedAt: new Date().toISOString(),
-            roomCharges,
-            nights,
-        };
+        setSubmitting(true);
+        setError("");
+        try {
+            const result = await bookingApi.create(form, files.primary, files.approval);
+            sessionStorage.setItem("gh_last_booking_id", result.bookingId);
+            router.push("/user/confirmation");
+        } catch (e) {
+            const code = e instanceof ApiError ? e.code : "UNKNOWN";
+            if (code === "UNAUTHENTICATED") {
+                sessionStorage.setItem("gh_after_login", "/user/book");
+                router.replace("/user/login");
+                return;
+            }
+            setError(SUBMIT_ERRORS[code] ?? SUBMIT_ERRORS.UNKNOWN);
+        } finally {
+            setSubmitting(false);
+        }
+    }
 
-        localStorage.setItem("guestHouseBooking", JSON.stringify(booking));
-        router.push("/user/confirmation");
+    if (authStatus !== "authed") {
+        return <div className="page-shell"><p>Loading…</p></div>;
     }
 
     return (
@@ -248,7 +277,7 @@ export default function BookingPage() {
                     </button>
                 ) : (
                     <form onSubmit={submitBooking}>
-                        <button type="submit" className="primary-button">Submit Request →</button>
+                        <button type="submit" className="primary-button" disabled={submitting}>{submitting ? "Submitting…" : "Submit Request →"}</button>
                     </form>
                 )}
             </div>
@@ -282,7 +311,7 @@ function StepOne({ form, updateField }: { form: BookingForm; updateField: (name:
                 <h2>1. Applicant / Proposer Details</h2>
                 <div className="form-grid">
                     <Field label="Name of Applicant / Proposer *" value={form.name} onChange={(value) => updateField("name", value)} placeholder="Enter your name" required />
-                    <Field label="Email id *" value={form.email} onChange={(value) => updateField("email", value)} placeholder="yourname@iitrpr.ac.in" type="email" required hint="Only .iitrpr.ac.in domain is accepted" />
+                    <Field label="Email id *" value={form.email} onChange={(value) => updateField("email", value)} placeholder="yourname@iitrpr.ac.in" type="email" required readOnly hint="Your signed-in @iitrpr.ac.in account" />
                     <SelectField label="Designation *" value={form.designation} onChange={(value) => updateField("designation", value)} options={["Faculty", "Staff", "Student", "Research Scholar", "Other"]} required />
                     <SelectField label="Department *" value={form.department} onChange={(value) => updateField("department", value)} options={["Computer Science & Engineering", "Electrical Engineering", "Mechanical Engineering", "Civil Engineering", "Other"]} required />
                     <Field label="Employee Code / Entry Number *" value={form.employeeCode} onChange={(value) => updateField("employeeCode", value)} placeholder="Enter employee code / entry number" required />
@@ -296,9 +325,9 @@ function StepOne({ form, updateField }: { form: BookingForm; updateField: (name:
                     <SelectField label="Category *" value={form.category} onChange={(value) => updateField("category", value)} options={CATEGORIES.map((item) => item.label)} required />
                     <SelectField label="Payment to be made by *" value={form.payment} onChange={(value) => updateField("payment", value)} options={["Institute Funds", "Project Funds", "Self / Other"]} required />
                     <Field label="Purpose of Visit *" value={form.purpose} onChange={(value) => updateField("purpose", value)} placeholder="Academic, research, conference, collaboration, etc." required />
-                    <Field label="Project No. / Budget Head / Other" value={form.project} onChange={(value) => updateField("project", value)} placeholder={form.payment === "Self / Other" ? "Not applicable for Self / Other" : form.payment ? "Enter details where applicable" : "Select a payment method first"} disabled={!(["Institute Funds", "Project Funds"].includes(form.payment))} />
+                    <Field label="Project No. / Budget Head / Other" value={form.project} onChange={(value) => updateField("project", value)} placeholder="Enter details where applicable" />
                     <SelectField label="Number of Rooms Required *" value={form.rooms} onChange={(value) => updateField("rooms", value)} options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]} required />
-                    <Field label="Approver Official Email" value={form.approverEmail} onChange={(value) => updateField("approverEmail", value)} placeholder={form.payment === "Self / Other" ? "Not applicable for Self / Other" : form.payment ? "approver@iitrpr.ac.in" : "Select a payment method first"} type="email" hint="Optional: used to notify the competent approver" disabled={!(["Institute Funds", "Project Funds"].includes(form.payment))} />
+                    <Field label="Approver Official Email" value={form.approverEmail} onChange={(value) => updateField("approverEmail", value)} placeholder="approver@iitrpr.ac.in" type="email" hint="Optional: used to notify the competent approver" />
                 </div>
             </section>
 
@@ -436,11 +465,11 @@ function UploadField({ title, fileName, onChange, required = false }: { title: s
     );
 }
 
-function Field({ label, value, onChange, placeholder, type = "text", required = false, hint, disabled = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean; hint?: string; disabled?: boolean }) {
+function Field({ label, value, onChange, placeholder, type = "text", required = false, hint, readOnly = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean; hint?: string; readOnly?: boolean }) {
     return (
-        <label className={`field${disabled ? " field-disabled" : ""}`}>
+        <label className="field">
             <span>{label}</span>
-            <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type={type} required={required} disabled={disabled} />
+            <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type={type} required={required} readOnly={readOnly} />
             {hint && <small>{hint}</small>}
         </label>
     );
