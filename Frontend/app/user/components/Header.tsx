@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUserAuth } from "@/lib/auth/UserAuth";
 
 export default function UserHeader() {
-  const [email, setEmail] = useState<string | null>(null);
-  useEffect(() => { setEmail(sessionStorage.getItem("guest_house_user_email")); }, []);
-  function signOut() { sessionStorage.removeItem("guest_house_user_email"); setEmail(null); }
+  const { status, account, logout } = useUserAuth();
+  const router = useRouter();
+  async function signOut() { await logout(); router.replace("/user"); }
   return (
     <header className="site-header">
       <Link href="/user" className="brand">
@@ -15,7 +16,9 @@ export default function UserHeader() {
       </Link>
       <nav className="nav">
         <Link href="/user">Home</Link><Link href="/user/book">Book Online</Link><Link href="/user/status">Booking Status</Link>
-        {email ? <button type="button" className="user-auth-button" onClick={signOut}>Sign out</button> : <Link className="user-auth-link" href="/user/login">Sign in with Google</Link>}
+        {status === "authed"
+          ? <button type="button" className="user-auth-button" onClick={signOut} title={account?.email}>Sign out</button>
+          : status === "anon" ? <Link className="user-auth-link" href="/user/login">Sign in with Google</Link> : null}
       </nav>
     </header>
   );
