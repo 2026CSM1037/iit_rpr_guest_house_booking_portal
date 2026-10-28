@@ -32,12 +32,14 @@ export default function StatusPage() {
 
   if (status !== "authed") return <div className="page-shell"><p>Loading…</p></div>;
 
+  const trail = booking?.trail ?? [];
+  const when = (action: string) => trail.find((t) => t.action === action)?.at;
+  const approved = booking ? ["Approved", "Booked"].includes(booking.status) : false;
   const steps = booking ? [
     { label: "Request Submitted", at: booking.submittedAt, done: true },
-    { label: "Chairman Approval", at: booking.approvals.chairman?.at, done: !!booking.approvals.chairman },
-    { label: "Warden Approval", at: booking.approvals.warden?.at, done: !!booking.approvals.warden },
-    { label: "Dean Approval", at: booking.approvals.dean?.at, done: !!booking.approvals.dean },
-    { label: "Booked", at: undefined, done: booking.status === "Booked" },
+    { label: "Under Review", at: when("forward"), done: !!when("forward") || approved },
+    { label: "Approved", at: when("approve"), done: approved },
+    { label: "Rooms Allotted (Booked)", at: when("allot"), done: booking.status === "Booked" },
     { label: "Check-in", at: booking.checkIn?.at, done: !!booking.checkIn },
     { label: "Check-out", at: booking.checkOut?.at, done: !!booking.checkOut },
   ] : [];
@@ -105,7 +107,7 @@ export default function StatusPage() {
   );
 }
 
-const TIMELINE_PLACEHOLDER = ["Request Submitted", "Chairman Approval", "Warden Approval", "Dean Approval", "Booked", "Check-in", "Check-out"]
+const TIMELINE_PLACEHOLDER = ["Request Submitted", "Under Review", "Approved", "Rooms Allotted (Booked)", "Check-in", "Check-out"]
   .map((label) => ({ label, at: undefined as string | undefined, done: false }));
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
