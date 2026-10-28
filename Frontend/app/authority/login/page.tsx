@@ -37,6 +37,7 @@ export default function LoginPage() {
 
       {error && <div className="alert" role="alert">{error}</div>}
 
+
       <div className="gbtn">
         {busy ? <p className="mute">Verifying your account…</p> : (
           <GoogleLogin

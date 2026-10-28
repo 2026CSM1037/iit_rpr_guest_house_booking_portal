@@ -8,10 +8,11 @@ const fmt = (v?: string) => {
 
 /** Read-only booking details for staff screens (authority + receptionist). Action buttons go in `children`. */
 export default function BookingCard({ b, children }: { b: Booking; children?: React.ReactNode }) {
-  const approvals = (["chairman", "warden", "dean"] as const).map((s) => {
-    const a = b.approvals[s];
-    return `${s[0].toUpperCase()}${s.slice(1)}: ${a ? `✓ ${a.by ?? ""} (${fmt(a.at)})` : "—"}`;
-  });
+  const who = (e?: string) => (e ? e.split("@")[0] : "applicant");
+  const line = (t: Booking["trail"][number]) => {
+    const verb = { submit: "submitted", forward: `forwarded to ${who(t.to)}`, approve: "approved", reject: "rejected", hold: "put on hold", resume: "resumed", allot: `allotted rooms ${t.remarks ?? ""}` }[t.action];
+    return `${who(t.by)} ${verb} · ${fmt(t.at)}${t.remarks && t.action !== "allot" ? ` — “${t.remarks}”` : ""}`;
+  };
 
   return (
     <article className="req">
@@ -43,7 +44,12 @@ export default function BookingCard({ b, children }: { b: Booking; children?: Re
         {b.approvalDocLink && <> · <a href={b.approvalDocLink} target="_blank" rel="noreferrer">Approval letter</a></>}
       </div>
 
-      <div className="req-sec mute">{approvals.join("  |  ")}</div>
+      {b.roomsAllotted && b.roomsAllotted.length > 0 && <div className="req-sec"><strong>Rooms allotted:</strong> {b.roomsAllotted.join(", ")}</div>}
+      {b.currentApprover && <div className="req-sec"><strong>Currently with:</strong> {who(b.currentApprover)}</div>}
+      <details className="req-sec trail">
+        <summary>Approval trail ({(b.trail ?? []).length})</summary>
+        <ol>{(b.trail ?? []).map((t, i) => <li key={i}>{line(t)}</li>)}</ol>
+      </details>
       {(b.checkIn || b.checkOut) && (
         <div className="req-sec mute">
           Check-in: {b.checkIn ? fmt(b.checkIn.at) : "—"}  |  Check-out: {b.checkOut ? fmt(b.checkOut.at) : "—"}
