@@ -8,6 +8,7 @@ DOMAIN = "@iitrpr.ac.in"
 
 # Demo admins - kept for now. The FIRST of these is the default first approver (override: FIRST_ADMIN_EMAIL in .env).
 DEMO_ADMINS = [
+    "2026csm1037@iitrpr.ac.in",
     "2026aim1020@iitrpr.ac.in",
     "2026csm1005@iitrpr.ac.in",
 ]
