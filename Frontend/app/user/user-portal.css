@@ -219,3 +219,45 @@
 .user-portal .user-login-error { padding: 10px; border: 1px solid #ef9a9a; background: #fff2f2; color: #a12626 !important; }
 .user-portal .user-login-hint { font-size: 12px; }
 @media (max-width: 800px) { .user-portal .user-auth-link, .user-portal .user-auth-button { width: 100%; } }
+
+/* Refined public portal styling and home-page photo carousel */
+.user-portal { --blue: #075fc9; --dark-blue: #063d78; --pale-blue: #eef7ff; --line: #d7e5f3; --text: #173957; --muted: #60758a; background: linear-gradient(180deg,#f4f9ff 0%,#fff 55%,#f6faff 100%); }
+.user-portal .page-shell { width: min(1320px, 94%); padding-top: 24px; }
+.user-portal .site-header { background: linear-gradient(105deg,#062c55 0%,#075fc9 62%,#1679df 100%); box-shadow: 0 6px 24px rgba(4,43,82,.18); }
+.user-portal .hero { border-radius: 18px; border: 1px solid rgba(255,255,255,.7); box-shadow: 0 18px 45px rgba(8,48,88,.19); }
+.user-portal .hero-image-placeholder { min-height: clamp(430px, 46vw, 610px); background-size: cover; background-position: center 48%; position: relative; transition: background-image .4s ease; }
+.user-portal .hero-overlay { max-width: 940px; padding: 34px 24px; animation: heroTextIn .55s ease both; }
+.user-portal .hero-eyebrow { display: inline-block; margin-bottom: 14px; padding: 7px 13px; border: 1px solid rgba(255,255,255,.52); border-radius: 99px; background: rgba(255,255,255,.12); font-size: 11px; font-weight: 800; letter-spacing: 2.2px; }
+.user-portal .hero-overlay h1 { font-size: clamp(42px,6vw,76px); font-weight: 850; letter-spacing: 2px; text-shadow: 0 3px 20px rgba(0,0,0,.2); }
+.user-portal .hero-overlay h2 { font-size: clamp(25px,4vw,48px); margin: 12px 0 22px; font-weight: 800; text-shadow: 0 3px 20px rgba(0,0,0,.2); }
+.user-portal .hero-overlay p { max-width: 800px; font-size: clamp(16px,1.7vw,21px); margin-bottom: 30px; text-shadow: 0 2px 12px rgba(0,0,0,.45); }
+.user-portal .hero-button { min-height: 58px; border-radius: 999px; padding: 0 34px; font-size: 17px; box-shadow: 0 8px 25px rgba(0,76,170,.4); transition: transform .2s, box-shadow .2s; }
+.user-portal .hero-button:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,76,170,.5); }
+.user-portal .hero-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; width: 46px; height: 46px; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; background: rgba(5,29,56,.45); color: white; font-size: 34px; line-height: 1; cursor: pointer; backdrop-filter: blur(8px); transition: background .2s, transform .2s; }
+.user-portal .hero-arrow:hover { background: rgba(0,95,201,.92); transform: translateY(-50%) scale(1.06); }
+.user-portal .hero-prev { left: 20px; }.user-portal .hero-next { right: 20px; }
+.user-portal .hero-slide-controls { position: absolute; z-index: 3; bottom: 22px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+.user-portal .hero-slide-controls button { width: 9px; height: 9px; padding: 0; border: 0; border-radius: 99px; background: rgba(255,255,255,.62); cursor: pointer; transition: width .2s, background .2s; }
+.user-portal .hero-slide-controls button.active { width: 28px; background: #fff; }
+.user-portal .hero-photo-count { position: absolute; right: 22px; bottom: 20px; color: white; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+.user-portal .info-grid { gap: 18px; margin-top: 22px; }
+.user-portal .info-card { padding: 24px; border-radius: 15px; border-color: #e0ebf6; box-shadow: 0 8px 26px rgba(16,62,103,.06); transition: transform .2s, box-shadow .2s; }
+.user-portal .info-card:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(16,62,103,.11); }
+.user-portal .info-card h3 { font-size: 18px; }.user-portal .card-icon { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: #e9f4ff; }
+.user-portal .home-note { margin-top: 22px; border-radius: 13px; border-color: #d8e9f9; background: linear-gradient(100deg,#fff,#f1f8ff); }
+.user-portal .simple-section { padding-top: 36px; }.user-portal .simple-section > h2 { font-size: clamp(23px,3vw,30px); letter-spacing: -.4px; color: #10375c; margin-bottom: 8px; }
+.user-portal .simple-section > p { line-height: 1.65; }
+.user-portal .table-responsive { border-radius: 14px; border-color: #d8e5f2; box-shadow: 0 10px 28px rgba(16,62,103,.07); }
+.user-portal .tariff-table { font-size: 13px; line-height: 1.5; }
+.user-portal .tariff-table th, .user-portal .tariff-table td { padding: 14px; border-color: #e0eaf4; }
+.user-portal .tariff-table thead th { padding: 16px 14px; background: linear-gradient(100deg,#0b477e,#0969bf); color: white; font-size: 12px; text-transform: uppercase; letter-spacing: .45px; }
+.user-portal .tariff-table tbody tr { transition: background .2s; }.user-portal .tariff-table tbody tr:hover { background: #eef7ff; }
+.user-portal .tariff-table th:nth-child(1), .user-portal .tariff-table td:nth-child(1) { width: 23%; }.user-portal .tariff-table th:nth-child(2), .user-portal .tariff-table td:nth-child(2) { width: 11%; }.user-portal .tariff-table th:nth-child(3), .user-portal .tariff-table td:nth-child(3) { width: 39%; }.user-portal .tariff-table th:nth-child(4), .user-portal .tariff-table td:nth-child(4) { width: 27%; }
+.user-portal .room-photo-cell { min-width: 150px; }.user-portal .room-category-photo { display: block; width: 100%; height: 105px; object-fit: cover; border-radius: 9px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(9,43,77,.14); }.user-portal .room-photo-cell strong { display: block; color: #10375c; font-size: 13px; }.user-portal .room-category-label { display: inline-block; margin-top: 6px; padding: 4px 8px; background: #e8f3ff; border-radius: 5px; color: #0756a3; font-size: 11px; font-weight: 700; }
+.user-portal .tariff-notes, .user-portal .booking-reminder, .user-portal .checkin-note { border-radius: 12px; padding: 16px 18px; background: #f2f8ff; border-color: #d6e6f6; line-height: 1.65; }
+.user-portal .guidelines-list { line-height: 1.7; padding: 22px 28px 22px 42px; border: 1px solid #e0ebf6; border-radius: 14px; background: white; box-shadow: 0 8px 24px rgba(16,62,103,.05); }.user-portal .guidelines-list li { padding-left: 5px; margin-bottom: 10px; }
+.user-portal #contact { margin-bottom: 12px; }.user-portal .contact-details { padding: 20px 28px 20px 42px; border: 1px solid #e0ebf6; border-radius: 14px; background: white; line-height: 2; }
+.user-portal .site-footer { background: linear-gradient(105deg,#062c55,#075fc9); }
+@keyframes heroTextIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 800px) { .user-portal .hero-image-placeholder { min-height: 420px; }.user-portal .hero-prev { left: 10px; }.user-portal .hero-next { right: 10px; }.user-portal .hero-arrow { width: 38px; height: 38px; font-size: 28px; }.user-portal .hero-overlay { padding: 28px 38px; }.user-portal .hero-photo-count { display: none; }.user-portal .tariff-table { min-width: 900px; } }
+@media (prefers-reduced-motion: reduce) { .user-portal .hero-overlay { animation: none; }.user-portal * { scroll-behavior: auto !important; transition: none !important; } }
