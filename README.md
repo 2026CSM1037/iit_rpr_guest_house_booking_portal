@@ -2,6 +2,8 @@
 
 A web portal for requesting, approving and managing guest house stays at IIT Ropar. Applicants submit a booking request online, a chain of approving authorities accepts, rejects, holds or forwards it, and the guest house receptionist handles on-site check-in, check-out, the PDF bill and payment status.
 
+<img width="884" height="406" alt="homepage" src="https://github.com/user-attachments/assets/f46be868-1755-482a-92ca-5dbab657d8f5" />
+
 Everything is stored in a **Google Sheet** (one row per booking) and uploaded documents go to **Google Drive**, so no separate database is needed.
 
 ## Features
@@ -14,18 +16,34 @@ Everything is stored in a **Google Sheet** (one row per booking) and uploaded do
 - Track every booking and its approval trail, and cancel while it is pending, on hold or booked (not after check-in)
 - E-mail notification at every update
 
+<img width="359" height="197" alt="signinpage" src="https://github.com/user-attachments/assets/bafae8cd-28a8-47b4-bbe7-6221345858eb" />
+
+<img width="521" height="386" alt="bookpage" src="https://github.com/user-attachments/assets/f7907511-7f36-4fb6-a0df-78cd226e2010" />
+
+<img width="519" height="276" alt="bookpage2" src="https://github.com/user-attachments/assets/913e4329-52de-4679-8af1-440ce8092724" />
+
+<img width="374" height="327" alt="confirmationpage" src="https://github.com/user-attachments/assets/502102f2-f0c7-4da3-9466-803201b1a8db" />
+
+
+
 **Authorities (`/authority`)**
 - Fixed list of admin accounts (see `Backend/admins.py`)
 - Every new request goes to the first admin, who can **approve, reject, hold, resume or forward** it to any other admin; the admin holding the request can act on it
 - Rejecting or holding requires remarks
 - Views: requests with me, my history, and (first admin only) all requests
 - Full approval trail kept for each booking
+<img width="483" height="117" alt="authoritydashboardpage" src="https://github.com/user-attachments/assets/1f4d8f01-60ff-42d8-814e-4c44976fa259" />
+
+
 
 **Receptionist (`/receptionist`)**
 - Sees only approved (Booked) requests
 - Records on-site check-in and check-out
 - Check-out generates a PDF bill, stores it in Drive and e-mails it to the applicant
 - Marks the bill as paid after payment is collected at the desk (no online payment)
+
+- <img width="276" height="192" alt="receptionistpage" src="https://github.com/user-attachments/assets/b35e4880-8f16-4a66-a945-d6dc5c249f9c" />
+
 
 ## Tech stack
 
