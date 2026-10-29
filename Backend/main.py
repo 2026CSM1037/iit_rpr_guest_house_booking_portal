@@ -1,3 +1,16 @@
+"""
+IIT Ropar Guest House Booking Portal - backend (FastAPI)
+
+Three separate roles, each with its own Google sign-in, cookie and endpoints:
+  user          /user/auth/*    booking form, own bookings
+  authority     /auth/*         fixed list of admins (admins.py); every request goes to the first admin, who can
+                                accept / reject / hold / forward it to any other admin; any admin may accept
+  receptionist  /receptionist/* on-site check-in / check-out, PDF bill, payment status
+
+Google Sheet tab = one row per booking. Files go to Drive, links go in the row.
+
+
+"""
 import io
 import json
 import math
@@ -9,7 +22,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, Form, Request, Response, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from google.auth.transport import requests as google_requests
@@ -22,7 +35,11 @@ from pydantic import BaseModel
 
 load_dotenv()
 
-# config
+from admins import DEMO_ADMINS, OFFICIAL_ADMINS  # noqa: E402
+from bill import build_bill_pdf  # noqa: E402
+from mailer import send_mail  # noqa: E402
+
+# ================================================================ config
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID", "")
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID") or None
@@ -40,7 +57,8 @@ MAX_FILE_BYTES = 5 * 1024 * 1024
 ALLOWED_FILES = {".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 MAGIC = {".pdf": b"%PDF", ".jpg": b"\xff\xd8", ".jpeg": b"\xff\xd8", ".png": b"\x89PNG"}
 
-
+# Keyed by the category label before the " (" (matches CATEGORIES in Frontend/app/user/book/page.tsx).
+# Prices are decided here, never by the browser.
 RATES = {
     "Executive Suite — Category-A": 0,
     "Executive Suite — Category-B": 3500,
@@ -49,15 +67,14 @@ RATES = {
     "Business Room — Category B-2": 1200,
 }
 
-# workflow
-SUBMITTED = "Submitted"
-BOOKED = "Booked"
+# ---- workflow --------------------------------------------------------------
+PENDING = "Pending Approval"  # waiting for the admin named in 'Current Approver'
+BOOKED = "Booked"            # any admin accepted
 REJECTED = "Rejected"
 ON_HOLD = "On Hold"
-STAGES = ("chairman", "warden", "dean")  # approval order
-PENDING = {"chairman": "Pending at Chairman", "warden": "Pending at Warden", "dean": "Pending at Dean"}
-NEXT_STATUS = {"chairman": PENDING["warden"], "warden": PENDING["dean"], "dean": BOOKED}
-APPROVAL_COL = {"chairman": "Approved By Chairman", "warden": "Approved By Warden", "dean": "Approved By Dean"}
+CANCELLED = "Cancelled"      # cancelled by the applicant
+PAYMENT_PENDING, PAID = "Pending", "Paid"  # 'Payment Status' column, set at check-out / by the receptionist
+OPEN_STATES = (PENDING, ON_HOLD)  # still inside the approval chain
 
 COLUMNS = [
     # form fields
@@ -65,8 +82,9 @@ COLUMNS = [
     "Mobile", "Category", "Payment", "Purpose", "Project", "Rooms", "Approver Email",
     "Arrival", "Departure", "Nights", "Room Charges", "Guests (JSON)", "Primary ID Link", "Approval Doc Link",
     # workflow
-    "Status", "Approved By Chairman", "Approved By Warden", "Approved By Dean",
-    "Onsite Check-in", "Onsite Check-out", "Remarks",
+    "Status", "Current Approver", "Approval Trail (JSON)", "Approved By",
+    "Onsite Check-in", "Onsite Check-out", "Bill Link", "Payment Status", "Payment Note",
+    "Cancelled At", "Remarks",
 ]
 
 
@@ -81,23 +99,12 @@ def col_letter(i: int) -> str:
 COL = {name: col_letter(i) for i, name in enumerate(COLUMNS)}
 
 
-def parse_authorities(raw: str) -> dict:
-    """'a@iitrpr.ac.in:chairman+warden+dean,b@iitrpr.ac.in:warden' -> {email: [roles]}"""
-    out = {}
-    for item in raw.split(","):
-        item = item.strip().lower()
-        if not item:
-            continue
-        email, _, roles = item.partition(":")
-        role_list = [r for r in roles.split("+") if r in STAGES]
-        if not role_list:
-            raise RuntimeError(f"AUTHORITY_EMAILS entry '{item}' needs roles, e.g. {email}:chairman+warden")
-        out[email] = role_list
-    return out
-
-
-AUTHORITIES = parse_authorities(
-    os.getenv("AUTHORITY_EMAILS", "2026aim1020@iitrpr.ac.in:chairman+warden+dean"))
+# Admins = demo admins + the official list in admins.py (+ optional EXTRA_ADMIN_EMAILS in .env). Order is kept for the dropdown.
+_extra = [e.strip().lower() for e in os.getenv("EXTRA_ADMIN_EMAILS", "").split(",") if e.strip()]
+ADMINS = list(dict.fromkeys(DEMO_ADMINS + OFFICIAL_ADMINS + _extra))
+FIRST_ADMIN = (os.getenv("FIRST_ADMIN_EMAIL") or DEMO_ADMINS[0]).strip().lower()  # receives every new request
+if FIRST_ADMIN not in ADMINS:
+    raise RuntimeError("FIRST_ADMIN_EMAIL must be one of the admins")
 RECEPTIONISTS = {e.strip().lower() for e in os.getenv("RECEPTIONIST_EMAILS", "2026aim1020@iitrpr.ac.in").split(",")
                  if e.strip()}
 
@@ -114,7 +121,7 @@ class ApiError(Exception):
         self.code, self.status = code, status
 
 
-# Google helpers
+# ================================================================ Google helpers
 _creds_cache = {}
 
 
@@ -199,7 +206,7 @@ def read_upload(upload: UploadFile):
     return ext, ALLOWED_FILES[ext], data
 
 
-# row helpers
+# ================================================================ row helpers
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -223,25 +230,25 @@ def add_remark(old: str, line: str) -> str:
     return f"{old}\n{line}" if old else line
 
 
-def next_stage(r: dict) -> Optional[str]:
-    for s in STAGES:
-        if not r[APPROVAL_COL[s]]:
-            return s
-    return None
+def trail_of(r: dict) -> list:
+    try:
+        return json.loads(r["Approval Trail (JSON)"] or "[]")
+    except ValueError:
+        return []
 
 
-def stage_of(r: dict) -> Optional[str]:
-    """Which authority role must act on this booking now (None = finished)."""
-    st = r["Status"]
-    if st in (SUBMITTED, PENDING["chairman"]):
-        return "chairman"
-    if st == PENDING["warden"]:
-        return "warden"
-    if st == PENDING["dean"]:
-        return "dean"
-    if st == ON_HOLD:
-        return next_stage(r)
-    return None
+def trail_add(r: dict, by: str, action: str, to: str = "", text: str = "") -> str:
+    """New value for the 'Approval Trail (JSON)' cell: who did what, in order (forward chain, hold, approve ...)."""
+    return json.dumps(trail_of(r) + [{"by": by, "action": action, "to": to, "at": now_iso(), "remarks": text}],
+                      ensure_ascii=False)
+
+
+def notify(bg: BackgroundTasks, to, subject: str, intro: str, r: dict, attachment=None):
+    """Queue an e-mail (sent after the response, failures are only logged)."""
+    body = (f"{intro}\n\nBooking ID: {r['Booking ID']}\nApplicant: {r['Name']} ({r['Email']})\n"
+            f"Category: {r['Category']}, rooms: {r['Rooms']}\nStay: {r['Arrival']} to {r['Departure']} "
+            f"({r['Nights']} night(s))\nPurpose: {r['Purpose']}\n\n-- IIT Ropar Guest House Booking Portal")
+    bg.add_task(send_mail, list(to), subject, body, attachment)
 
 
 def _int(v, default=0):
@@ -258,11 +265,12 @@ def to_api(r: dict, staff: bool) -> dict:
     except ValueError:
         guests = []
     remarks = r["Remarks"]
-    if not staff:
-        remarks = re.sub(r" \([^)]*@[^)]*\)", "", remarks)
+    trail = trail_of(r)
+    if not staff:  # applicant never sees admin e-mails
+        remarks = re.sub(r" -> \S+@\S+", "", re.sub(r" \([^)]*@[^)]*\)", "", remarks))
+        trail = [{"action": t.get("action", ""), "at": t.get("at", ""), "remarks": t.get("remarks", "")} for t in trail]
     return {
         "bookingId": r["Booking ID"], "submittedAt": r["Submitted At"], "status": r["Status"],
-        "stage": stage_of(r),
         "name": r["Name"], "email": r["Email"], "designation": r["Designation"], "department": r["Department"],
         "employeeCode": r["Employee Code"], "mobile": r["Mobile"], "category": r["Category"],
         "payment": r["Payment"], "purpose": r["Purpose"], "project": r["Project"], "rooms": r["Rooms"],
@@ -270,14 +278,20 @@ def to_api(r: dict, staff: bool) -> dict:
         "nights": _int(r["Nights"]), "roomCharges": _int(r["Room Charges"]), "guests": guests,
         "primaryIdLink": r["Primary ID Link"] if staff else "",
         "approvalDocLink": r["Approval Doc Link"] if staff else "",
-        "approvals": {s: split_stamp(r[APPROVAL_COL[s]], staff) for s in STAGES},
+        "currentApprover": r["Current Approver"] if staff else "",
+        "trail": trail,
+        "approvedBy": split_stamp(r["Approved By"], staff),
         "checkIn": split_stamp(r["Onsite Check-in"], staff),
         "checkOut": split_stamp(r["Onsite Check-out"], staff),
+        "paymentStatus": r["Payment Status"], "paymentNote": r["Payment Note"] if staff else "",
+        "billLink": r["Bill Link"] if staff else "",
+        "cancelledAt": r["Cancelled At"],
+        "canCancel": r["Status"] in (PENDING, ON_HOLD, BOOKED) and not r["Onsite Check-in"],
         "remarks": remarks,
     }
 
 
-# sessions + auth
+# ================================================================ sessions + auth
 def set_session(resp: Response, cookie: str, payload: dict):
     resp.set_cookie(cookie, serializer.dumps(payload), max_age=SESSION_SECONDS, httponly=True,
                     samesite="lax", secure=COOKIE_SECURE, path="/")
@@ -310,8 +324,7 @@ def user_profile(email: str, name: str):
 
 
 def authority_profile(email: str, name: str):
-    roles = AUTHORITIES.get(email)
-    return {"name": name, "email": email, "roles": roles} if roles else None
+    return {"name": name, "email": email, "isFirst": email == FIRST_ADMIN} if email in ADMINS else None
 
 
 def receptionist_profile(email: str, name: str):
@@ -384,7 +397,7 @@ def health():
     return {"ok": True}
 
 
-#  user: bookings
+# ================================================================ user: bookings
 class Guest(BaseModel):
     name: str = ""
     gender: str = ""
@@ -425,6 +438,7 @@ def _dump(model: BaseModel) -> dict:
 
 @app.post("/bookings")
 def create_booking(
+    background: BackgroundTasks,
     data: str = Form(...),
     primary_id_file: UploadFile = File(...),
     approval_file: Optional[UploadFile] = File(None),
@@ -470,14 +484,21 @@ def create_booking(
         "Project": b.project, "Rooms": rooms, "Approver Email": b.approverEmail,
         "Arrival": first.arrival, "Departure": first.departure, "Nights": nights, "Room Charges": charges,
         "Guests (JSON)": json.dumps([_dump(g) for g in b.guests], ensure_ascii=False),
-        "Primary ID Link": primary_link, "Approval Doc Link": approval_link, "Status": SUBMITTED,
+        "Primary ID Link": primary_link, "Approval Doc Link": approval_link,
+        "Status": PENDING, "Current Approver": FIRST_ADMIN,
     }
     # RAW (not USER_ENTERED) so text typed by users can never run as a spreadsheet formula
     sheets().spreadsheets().values().append(
         spreadsheetId=SPREADSHEET_ID, range=f"'{SHEET_NAME}'!A:A", valueInputOption="RAW",
         insertDataOption="INSERT_ROWS", body={"values": [[values.get(c, "") for c in COLUMNS]]},
     ).execute()
-    return {"bookingId": booking_id, "status": SUBMITTED, "submittedAt": values["Submitted At"],
+    notify(background, [user["email"]], f"Booking {booking_id} submitted",
+           "Your guest house request was submitted and is waiting for approval. We will e-mail you at every update.",
+           values)
+    notify(background, [FIRST_ADMIN], f"Action needed: guest house request {booking_id}",
+           "A new guest house request is waiting for you. Sign in to the Authority Portal to accept, reject, "
+           "hold or forward it.", values)
+    return {"bookingId": booking_id, "status": PENDING, "submittedAt": values["Submitted At"],
             "nights": nights, "roomCharges": charges}
 
 
@@ -495,74 +516,138 @@ def my_booking(booking_id: str, user: dict = Depends(current_user)):
     return {"booking": to_api(r, False)}
 
 
-# authority: chairman -> warden -> dean
+class CancelIn(BaseModel):
+    reason: str = ""
+
+
+@app.post("/user/bookings/{booking_id}/cancel")
+def cancel_booking(booking_id: str, body: CancelIn, background: BackgroundTasks, user: dict = Depends(current_user)):
+    """Applicant cancels while the request is pending / on hold / booked (not after check-in)."""
+    r = find_row(booking_id)
+    if r["Email"].lower() != user["email"]:
+        raise ApiError("NOT_FOUND", 404)
+    if r["Status"] not in (PENDING, ON_HOLD, BOOKED) or r["Onsite Check-in"]:
+        raise ApiError("INVALID_STATE", 409)
+    reason = body.reason.strip()
+    update_cells(r["_row"], {
+        "Status": CANCELLED, "Current Approver": "", "Cancelled At": now_iso(),
+        "Approval Trail (JSON)": trail_add(r, user["email"], "cancel", text=reason),
+        "Remarks": add_remark(r["Remarks"], remark_line("Applicant", user["email"], "cancelled", reason)),
+    })
+    admins = {FIRST_ADMIN, r["Current Approver"].lower(), r["Approved By"].partition(" @ ")[0].lower()} - {""}
+    why = f"\nReason: {reason}" if reason else ""
+    notify(background, [user["email"]], f"Booking {booking_id} cancelled",
+           f"Your booking request was cancelled as requested.{why}", r)
+    notify(background, admins, f"Cancelled by applicant: {booking_id}",
+           f"The applicant cancelled this request (it was: {r['Status']}).{why}", r)
+    return {"bookingId": booking_id, "status": CANCELLED}
+
+
+# ================================================================ authority: first admin -> forward chain -> booked
 class DecisionIn(BaseModel):
-    decision: str  # approve | reject | hold | resume
+    decision: str  # approve | reject | hold | resume | forward
     remarks: str = ""
+    forwardTo: str = ""  # admin e-mail, only for decision=forward
+
+
+@app.get("/authority/admins")
+def authority_admins(authority: dict = Depends(current_authority)):
+    """Dropdown list for 'Forward': every official admin except me."""
+    return {"admins": [a for a in ADMINS if a != authority["email"]]}
 
 
 @app.get("/authority/bookings")
 def authority_bookings(scope: str = "mine", authority: dict = Depends(current_authority)):
-    """scope=mine: waiting for one of my roles. scope=all: every booking (read-only unless canAct)."""
-    roles = authority["roles"]
+    """scope=mine: currently with me. history: I acted on it / it was forwarded to me. all: first admin only."""
+    me = authority["email"]
+    if scope == "all" and me != FIRST_ADMIN:
+        raise ApiError("NOT_AUTHORIZED", 403)
     out = []
     for r in reversed(read_rows()):
-        can_act = stage_of(r) in roles
-        if scope == "mine" and not can_act:
+        mine = r["Current Approver"].lower() == me and r["Status"] in OPEN_STATES
+        if scope == "mine" and not mine:
+            continue
+        if scope == "history" and not any(me in (t.get("by"), t.get("to")) for t in trail_of(r)):
             continue
         item = to_api(r, True)
-        item["canAct"] = can_act
+        item["canAct"] = mine
         out.append(item)
     return {"bookings": out}
 
 
 @app.post("/authority/bookings/{booking_id}/decision")
-def authority_decide(booking_id: str, body: DecisionIn, authority: dict = Depends(current_authority)):
-    if body.decision not in ("approve", "reject", "hold", "resume"):
+def authority_decide(booking_id: str, body: DecisionIn, background: BackgroundTasks,
+                     authority: dict = Depends(current_authority)):
+    d, me = body.decision, authority["email"]
+    if d not in ("approve", "reject", "hold", "resume", "forward"):
         raise ApiError("INVALID_INPUT", 422)
     r = find_row(booking_id)
-    stage = stage_of(r)
-    if stage is None:
-        raise ApiError("ALREADY_DECIDED", 409)  # Booked or Rejected
-    if stage not in authority["roles"]:
-        raise ApiError("NOT_AUTHORIZED", 403)
+    if r["Status"] not in OPEN_STATES:
+        raise ApiError("ALREADY_DECIDED", 409)  # Booked / Rejected / Cancelled
+    if r["Current Approver"].lower() != me:
+        raise ApiError("NOT_AUTHORIZED", 403)  # only the admin the request is currently with can act
     text = body.remarks.strip()
     on_hold = r["Status"] == ON_HOLD
-    updates = {}
+    if (d == "resume" and not on_hold) or (on_hold and d not in ("resume", "forward")):
+        raise ApiError("INVALID_STATE", 409)
+    if d in ("reject", "hold") and not text:
+        raise ApiError("REMARKS_REQUIRED", 422)
+    target = ""
+    if d == "forward":
+        target = body.forwardTo.strip().lower()
+        if target not in ADMINS or target == me:
+            raise ApiError("INVALID_INPUT", 422)
 
-    if body.decision == "resume":
-        if not on_hold:
-            raise ApiError("INVALID_STATE", 409)
-        updates["Status"] = PENDING[stage]
-    else:
-        if on_hold:
-            raise ApiError("INVALID_STATE", 409)  # resume first
-        if body.decision == "approve":
-            updates[APPROVAL_COL[stage]] = stamp(authority["email"])
-            updates["Status"] = NEXT_STATUS[stage]
-        else:  # reject | hold need a reason
-            if not text:
-                raise ApiError("REMARKS_REQUIRED", 422)
-            updates["Status"] = REJECTED if body.decision == "reject" else ON_HOLD
-
-    updates["Remarks"] = add_remark(r["Remarks"], remark_line(stage.capitalize(), authority["email"],
-                                                              body.decision, text))
+    status = {"approve": BOOKED, "reject": REJECTED, "hold": ON_HOLD, "resume": PENDING, "forward": PENDING}[d]
+    updates = {
+        "Status": status,
+        "Approval Trail (JSON)": trail_add(r, me, d, target, text),
+        "Remarks": add_remark(r["Remarks"], remark_line("Admin", me, d + (f" -> {target}" if target else ""), text)),
+    }
+    if d == "forward":
+        updates["Current Approver"] = target
+    elif d in ("approve", "reject"):
+        updates["Current Approver"] = ""
+        if d == "approve":
+            updates["Approved By"] = stamp(me)
     update_cells(r["_row"], updates)
-    return {"bookingId": booking_id, "status": updates["Status"]}
+
+    # ---- e-mails: user hears about every update; the first admin about the outcome; a forward target when forwarded
+    why = f"\nRemarks: {text}" if text else ""
+    first = [FIRST_ADMIN] if FIRST_ADMIN != me else []
+    if d == "forward":
+        notify(background, [target], f"Action needed: guest house request {booking_id}",
+               f"{me} forwarded this request to you for approval.{why}", r)
+        notify(background, [r["Email"]], f"Booking {booking_id}: forwarded for approval",
+               f"Your request was forwarded to {target} for approval.", r)
+    elif d == "approve":
+        notify(background, [r["Email"]] + first, f"Booking {booking_id} approved",
+               "The request was approved and the booking is confirmed." + why, r)
+    elif d == "reject":
+        notify(background, [r["Email"]] + first, f"Booking {booking_id} rejected",
+               "Unfortunately the request was rejected." + why, r)
+    elif d == "hold":
+        notify(background, [r["Email"]], f"Booking {booking_id} put on hold",
+               "Your request is on hold for now." + why, r)
+    else:  # resume
+        notify(background, [r["Email"]], f"Booking {booking_id}: approval resumed",
+               "Your request is back in the approval queue.", r)
+    return {"bookingId": booking_id, "status": status}
 
 
-# receptionist: on-site check-in / out
+# ================================================================ receptionist: on-site check-in / out
 @app.get("/receptionist/bookings")
 def receptionist_bookings(scope: str = "active", receptionist: dict = Depends(current_receptionist)):
-    """Only fully approved (Booked) requests. scope=active hides ones already checked out."""
+    """Only fully approved (Booked) requests. scope=active hides stays that are checked out AND paid."""
     rows = [r for r in read_rows() if r["Status"] == BOOKED]
     if scope == "active":
-        rows = [r for r in rows if not r["Onsite Check-out"]]
+        rows = [r for r in rows if not (r["Onsite Check-out"] and r["Payment Status"] == PAID)]
     return {"bookings": [to_api(r, True) for r in reversed(rows)]}
 
 
 @app.post("/receptionist/bookings/{booking_id}/checkin")
-def receptionist_checkin(booking_id: str, receptionist: dict = Depends(current_receptionist)):
+def receptionist_checkin(booking_id: str, background: BackgroundTasks,
+                         receptionist: dict = Depends(current_receptionist)):
     r = find_row(booking_id)
     if r["Status"] != BOOKED:
         raise ApiError("INVALID_STATE", 409)
@@ -572,18 +657,66 @@ def receptionist_checkin(booking_id: str, receptionist: dict = Depends(current_r
         "Onsite Check-in": stamp(receptionist["email"]),
         "Remarks": add_remark(r["Remarks"], remark_line("Reception", receptionist["email"], "check-in")),
     })
+    notify(background, [r["Email"]], f"Booking {booking_id}: checked in",
+           "Your guest(s) have checked in at the Guest House.", r)
     return {"bookingId": booking_id, "checkedIn": True}
 
 
 @app.post("/receptionist/bookings/{booking_id}/checkout")
-def receptionist_checkout(booking_id: str, receptionist: dict = Depends(current_receptionist)):
+def receptionist_checkout(booking_id: str, background: BackgroundTasks,
+                          receptionist: dict = Depends(current_receptionist)):
+    """Check-out: builds the PDF bill, stores it in Drive, e-mails it to the applicant. Payment is marked separately."""
     r = find_row(booking_id)
     if r["Status"] != BOOKED or not r["Onsite Check-in"]:
         raise ApiError("INVALID_STATE", 409)
     if r["Onsite Check-out"]:
         raise ApiError("ALREADY_DONE", 409)
+    out_stamp = stamp(receptionist["email"])
+    pdf = build_bill_pdf({**r, "Onsite Check-out": out_stamp})
+    bill_name = f"{booking_id}_bill.pdf"
+    try:
+        bill_link = upload_to_drive(bill_name, pdf, "application/pdf")
+    except Exception as exc:  # the bill can still be e-mailed / re-downloaded
+        print("WARNING: could not store the bill in Drive:", repr(exc))
+        bill_link = ""
     update_cells(r["_row"], {
-        "Onsite Check-out": stamp(receptionist["email"]),
-        "Remarks": add_remark(r["Remarks"], remark_line("Reception", receptionist["email"], "check-out")),
+        "Onsite Check-out": out_stamp, "Bill Link": bill_link, "Payment Status": PAYMENT_PENDING,
+        "Remarks": add_remark(r["Remarks"], remark_line("Reception", receptionist["email"], "check-out, bill generated")),
     })
-    return {"bookingId": booking_id, "checkedOut": True}
+    notify(background, [r["Email"]], f"Booking {booking_id}: your bill",
+           f"Thank you for staying with us. Your bill (Rs. {_int(r['Room Charges']):,}) is attached. "
+           "Payment is collected at the Guest House reception.", r, (bill_name, pdf, "application/pdf"))
+    return {"bookingId": booking_id, "checkedOut": True, "billLink": bill_link}
+
+
+@app.get("/receptionist/bookings/{booking_id}/bill")
+def receptionist_bill(booking_id: str, receptionist: dict = Depends(current_receptionist)):
+    """Re-download the bill PDF of a checked-out stay."""
+    r = find_row(booking_id)
+    if not r["Onsite Check-out"]:
+        raise ApiError("INVALID_STATE", 409)
+    return Response(build_bill_pdf(r), media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="{booking_id}_bill.pdf"'})
+
+
+class PaymentIn(BaseModel):
+    note: str = ""  # e.g. mode / receipt no. - there is no online payment, the receptionist just records it
+
+
+@app.post("/receptionist/bookings/{booking_id}/payment")
+def receptionist_payment(booking_id: str, body: PaymentIn, background: BackgroundTasks,
+                         receptionist: dict = Depends(current_receptionist)):
+    """Receptionist marks the bill as paid (after collecting payment at the desk)."""
+    r = find_row(booking_id)
+    if r["Status"] != BOOKED or not r["Onsite Check-out"]:
+        raise ApiError("INVALID_STATE", 409)
+    if r["Payment Status"] == PAID:
+        raise ApiError("ALREADY_DONE", 409)
+    note = body.note.strip()
+    update_cells(r["_row"], {
+        "Payment Status": PAID, "Payment Note": f"{note} | {stamp(receptionist['email'])}" if note else stamp(receptionist["email"]),
+        "Remarks": add_remark(r["Remarks"], remark_line("Reception", receptionist["email"], "payment received", note)),
+    })
+    notify(background, [r["Email"]], f"Booking {booking_id}: payment received",
+           "We have recorded your payment. Thank you!", r)
+    return {"bookingId": booking_id, "paymentStatus": PAID}

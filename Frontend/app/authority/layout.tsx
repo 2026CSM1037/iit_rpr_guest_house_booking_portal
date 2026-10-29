@@ -14,7 +14,7 @@ function Header() {
       </div>
       {authority && (
         <div className="who">
-          <span className="chip">{authority.roles.join(" · ")}</span>
+          <span className="chip">{authority.isFirst ? "Admin" : "Authority"}</span>
           <span>{authority.email}</span>
           <button className="link" onClick={async () => { await logout(); router.replace("/authority/login"); }}>Sign out</button>
         </div>
