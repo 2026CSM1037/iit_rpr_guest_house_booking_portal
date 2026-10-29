@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HeroSlideshow from "./components/HeroSlideshow";
 
 const categories = [
   "Executive Suite (Category - A)",
@@ -12,6 +13,7 @@ const tariffRows = [
   {
     room: "Executive Suite Room",
     category: "Category-A",
+    image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=640&q=80",
     tariff: "Free",
     eligibility: [
       "Institute-invited guests who are members of statutory bodies.",
@@ -24,6 +26,7 @@ const tariffRows = [
   {
     room: "Executive Suite Room",
     category: "Category-B",
+    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=640&q=80",
     tariff: "₹3,500",
     eligibility: [
       "Faculty/staff for themselves, their family, or relatives.",
@@ -36,6 +39,7 @@ const tariffRows = [
   {
     room: "Business Room",
     category: "Category-A",
+    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=640&q=80",
     tariff: "Free",
     eligibility: [
       "Institute-invited guests who are members of statutory bodies.",
@@ -49,6 +53,7 @@ const tariffRows = [
   {
     room: "Business Room",
     category: "Category B-1",
+    image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=640&q=80",
     tariff: "₹2,000",
     eligibility: [
       "Guests invited by sponsored projects, faculty collaborations, consultancy, short-term courses, seminars, conferences, etc.",
@@ -59,6 +64,7 @@ const tariffRows = [
   {
     room: "Business Room",
     category: "Category B-2",
+    image: "https://images.unsplash.com/photo-1595576508898-0ad5c879a061?auto=format&fit=crop&w=640&q=80",
     tariff: "₹1,200",
     eligibility: [
       "Faculty/staff for themselves, their family, or relatives.",
@@ -90,22 +96,7 @@ const guidelines = [
 export default function HomePage() {
   return (
     <div className="page-shell home-page">
-      <section className="hero">
-        <div className="hero-image-placeholder">
-          <div className="hero-overlay">
-            <h1>IIT ROPAR</h1>
-            <h2>GUEST HOUSE PORTAL</h2>
-            <p>
-              Comfortable stay, modern facilities and a home away from home
-              for our guests.
-            </p>
-            <Link href="/user/book" className="primary-button hero-button">
-              <span aria-hidden="true">▣</span> Book Online{" "}
-              <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HeroSlideshow />
 
       <section className="info-grid">
         <article className="info-card">
@@ -162,7 +153,7 @@ export default function HomePage() {
           <table className="tariff-table">
             <thead>
               <tr>
-                <th>Room Category</th>
+                <th>Room Photo &amp; Category</th>
                 <th>Tariff</th>
                 <th>Eligibility</th>
                 <th>Approving Authority</th>
@@ -171,10 +162,10 @@ export default function HomePage() {
             <tbody>
               {tariffRows.map((row, index) => (
                 <tr key={`${row.room}-${row.category}-${index}`}>
-                  <td>
+                  <td className="room-photo-cell">
+                    <img className="room-category-photo" src={row.image} alt={`${row.room} ${row.category}`} loading="lazy" />
                     <strong>{row.room}</strong>
-                    <br />
-                    {row.category}
+                    <span className="room-category-label">{row.category}</span>
                   </td>
                   <td><strong>{row.tariff}</strong></td>
                   <td>
