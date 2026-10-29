@@ -1,4 +1,4 @@
-# IIT Ropar Guest House Booking Portal
+****# IIT Ropar Guest House Booking Portal
 
 A web portal for requesting, approving and managing guest house stays at IIT Ropar. Applicants submit a booking request online, a chain of approving authorities accepts, rejects, holds or forwards it, and the guest house receptionist handles on-site check-in, check-out, the PDF bill and payment status.
 
@@ -201,8 +201,9 @@ Access is re-checked on every request, so removing an e-mail revokes access imme
 - The repo has no `.env.example` files yet, so the variables above are the reference.
 
 ## Team
--Anirudh Shukla(2026AIM1002)
--Soudip Das(2026CSM1037)
--Sanket Bandgar(2026AIM1020)
--Aman Singh Bisht(2026CSM1005)
+
+- Anirudh Shukla(2026AIM1002)
+- Soudip Das(2026CSM1037)
+- Sanket Bandgar(2026AIM1020)
+- Aman Singh Bisht(2026CSM1005)
 
