@@ -1,5 +1,6 @@
 import Link from "next/link";
 import HeroSlideshow from "./components/HeroSlideshow";
+import "./home.css";
 
 const categories = [
   "Executive Suite (Category - A)",
@@ -95,8 +96,9 @@ const guidelines = [
 
 export default function HomePage() {
   return (
-    <div className="page-shell home-page">
+    <div className="home-root">
       <HeroSlideshow />
+      <div className="page-shell home-page">
 
       <section className="info-grid">
         <article className="info-card">
@@ -167,8 +169,8 @@ export default function HomePage() {
                     <strong>{row.room}</strong>
                     <span className="room-category-label">{row.category}</span>
                   </td>
-                  <td><strong>{row.tariff}</strong></td>
-                  <td>
+                  <td data-label="Tariff"><strong>{row.tariff}</strong></td>
+                  <td data-label="Eligibility">
                     <ul>
                       {row.eligibility.map((item, eligibilityIndex) => (
                         <li key={`${row.category}-eligibility-${eligibilityIndex}`}>
@@ -177,7 +179,7 @@ export default function HomePage() {
                       ))}
                     </ul>
                   </td>
-                  <td>{row.authority}</td>
+                  <td data-label="Approving Authority">{row.authority}</td>
                 </tr>
               ))}
             </tbody>
@@ -232,6 +234,7 @@ export default function HomePage() {
           <li>Rupnagar, Punjab - 140001, India</li>
         </ul>
       </section>
+      </div>
     </div>
   );
 }
