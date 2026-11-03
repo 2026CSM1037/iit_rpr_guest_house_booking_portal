@@ -12,15 +12,37 @@ const slides = [
 
 export default function HeroSlideshow() {
   const [active, setActive] = useState(0);
+  // Slides are only mounted once they are current or up next, so we never download all 4 large photos at once.
+  const [loaded, setLoaded] = useState<number[]>([0, 1]);
+
   useEffect(() => {
     const timer = window.setInterval(() => setActive((current) => (current + 1) % slides.length), 5500);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const upNext = (active + 1) % slides.length;
+    setLoaded((prev) => Array.from(new Set([...prev, active, upNext])));
+  }, [active]);
+
   const previous = () => setActive((current) => (current - 1 + slides.length) % slides.length);
   const next = () => setActive((current) => (current + 1) % slides.length);
+
   return (
     <section className="hero" aria-label={slides[active].alt}>
-      <div className="hero-image-placeholder" style={{ backgroundImage: `linear-gradient(180deg, rgba(5,22,44,.24), rgba(2,22,48,.78)), url("${slides[active].image}")` }}>
+      <div className="hero-image-placeholder">
+        {slides.map((slide, index) =>
+          loaded.includes(index) ? (
+            <div
+              key={slide.image}
+              className={`hero-slide${active === index ? " is-active" : ""}`}
+              style={{ backgroundImage: `url("${slide.image}")` }}
+              role="img"
+              aria-label={slide.alt}
+              aria-hidden={active !== index}
+            />
+          ) : null
+        )}
         <div className="hero-overlay" key={active}>
           <span className="hero-eyebrow">WELCOME TO IIT ROPAR</span>
           <h1>IIT ROPAR</h1>
