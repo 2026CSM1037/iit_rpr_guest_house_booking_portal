@@ -35,9 +35,12 @@ from pydantic import BaseModel
 
 load_dotenv()
 
+import allocation  # noqa: E402
+import authorities  # noqa: E402
 from admins import DEMO_ADMINS, OFFICIAL_ADMINS  # noqa: E402
 from bill import build_bill_pdf  # noqa: E402
 from mailer import send_mail  # noqa: E402
+from tabs import ApiError  # noqa: E402
 
 # ================================================================ config
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -69,7 +72,8 @@ RATES = {
 
 # ---- workflow --------------------------------------------------------------
 PENDING = "Pending Approval"  # waiting for the admin named in 'Current Approver'
-BOOKED = "Booked"            # any admin accepted
+APPROVED = "Approved"        # an admin accepted; back with the first admin, who now allocates rooms
+BOOKED = "Booked"            # rooms allocated by the first admin
 REJECTED = "Rejected"
 ON_HOLD = "On Hold"
 CANCELLED = "Cancelled"      # cancelled by the applicant
@@ -85,6 +89,7 @@ COLUMNS = [
     "Status", "Current Approver", "Approval Trail (JSON)", "Approved By",
     "Onsite Check-in", "Onsite Check-out", "Bill Link", "Payment Status", "Payment Note",
     "Cancelled At", "Remarks",
+    "Approved By Name", "Allocated Rooms", "Allocated By",  # appended at the end so older rows stay valid
 ]
 
 
@@ -105,6 +110,11 @@ ADMINS = list(dict.fromkeys(DEMO_ADMINS + OFFICIAL_ADMINS + _extra))
 FIRST_ADMIN = (os.getenv("FIRST_ADMIN_EMAIL") or DEMO_ADMINS[0]).strip().lower()  # receives every new request
 if FIRST_ADMIN not in ADMINS:
     raise RuntimeError("FIRST_ADMIN_EMAIL must be one of the admins")
+
+
+def is_admin(email: str) -> bool:
+    """ADMINS above only seeds the 'Admins' sheet tab; from then on the first admin manages the list in the portal."""
+    return email == FIRST_ADMIN or email in authorities.active_admins(ADMINS)
 RECEPTIONISTS = {e.strip().lower() for e in os.getenv("RECEPTIONIST_EMAILS", "2026aim1020@iitrpr.ac.in").split(",")
                  if e.strip()}
 
@@ -114,11 +124,6 @@ if missing:
     raise RuntimeError(f"Missing environment variables: {', '.join(missing)} (see .env.example)")
 
 serializer = URLSafeTimedSerializer(SECRET_KEY, salt="gh-session")
-
-
-class ApiError(Exception):
-    def __init__(self, code: str, status: int):
-        self.code, self.status = code, status
 
 
 # ================================================================ Google helpers
@@ -150,7 +155,7 @@ def ensure_sheet():
         svc.batchUpdate(spreadsheetId=SPREADSHEET_ID,
                         body={"requests": [{"addSheet": {"properties": {"title": SHEET_NAME}}}]}).execute()
     head = svc.values().get(spreadsheetId=SPREADSHEET_ID, range=f"'{SHEET_NAME}'!1:2").execute().get("values", [])
-    if not head or (len(head) == 1 and head[0] != COLUMNS):
+    if not head or (head[0] != COLUMNS and (len(head) == 1 or COLUMNS[:len(head[0])] == head[0])):  # new / header-only / older header
         svc.values().update(spreadsheetId=SPREADSHEET_ID, range=f"'{SHEET_NAME}'!A1", valueInputOption="RAW",
                             body={"values": [COLUMNS]}).execute()
     elif head[0] != COLUMNS:
@@ -246,7 +251,9 @@ def trail_add(r: dict, by: str, action: str, to: str = "", text: str = "") -> st
 def notify(bg: BackgroundTasks, to, subject: str, intro: str, r: dict, attachment=None):
     """Queue an e-mail (sent after the response, failures are only logged)."""
     body = (f"{intro}\n\nBooking ID: {r['Booking ID']}\nApplicant: {r['Name']} ({r['Email']})\n"
-            f"Category: {r['Category']}, rooms: {r['Rooms']}\nStay: {r['Arrival']} to {r['Departure']} "
+            f"Category: {r['Category']}, rooms: {r['Rooms']}"
+            f"{(', allocated room(s): ' + r['Allocated Rooms']) if r.get('Allocated Rooms') else ''}\n"
+            f"Stay: {r['Arrival']} to {r['Departure']} "
             f"({r['Nights']} night(s))\nPurpose: {r['Purpose']}\n\n-- IIT Ropar Guest House Booking Portal")
     bg.add_task(send_mail, list(to), subject, body, attachment)
 
@@ -281,12 +288,14 @@ def to_api(r: dict, staff: bool) -> dict:
         "currentApprover": r["Current Approver"] if staff else "",
         "trail": trail,
         "approvedBy": split_stamp(r["Approved By"], staff),
+        "approvedByName": r["Approved By Name"] if staff else "",
+        "allocatedRooms": [x.strip() for x in r["Allocated Rooms"].split(",") if x.strip()],
         "checkIn": split_stamp(r["Onsite Check-in"], staff),
         "checkOut": split_stamp(r["Onsite Check-out"], staff),
         "paymentStatus": r["Payment Status"], "paymentNote": r["Payment Note"] if staff else "",
         "billLink": r["Bill Link"] if staff else "",
         "cancelledAt": r["Cancelled At"],
-        "canCancel": r["Status"] in (PENDING, ON_HOLD, BOOKED) and not r["Onsite Check-in"],
+        "canCancel": r["Status"] in (PENDING, ON_HOLD, APPROVED, BOOKED) and not r["Onsite Check-in"],
         "remarks": remarks,
     }
 
@@ -324,7 +333,7 @@ def user_profile(email: str, name: str):
 
 
 def authority_profile(email: str, name: str):
-    return {"name": name, "email": email, "isFirst": email == FIRST_ADMIN} if email in ADMINS else None
+    return {"name": name, "email": email, "isFirst": email == FIRST_ADMIN} if is_admin(email) else None
 
 
 def receptionist_profile(email: str, name: str):
@@ -335,6 +344,8 @@ def receptionist_profile(email: str, name: str):
 async def lifespan(_app):
     try:
         ensure_sheet()
+        authorities.ensure(ADMINS)
+        allocation.ensure_tabs()
     except Exception as exc:  # server still starts; the first request will show the real error
         print("WARNING: could not prepare the Google Sheet:", repr(exc))
     yield
@@ -526,11 +537,12 @@ def cancel_booking(booking_id: str, body: CancelIn, background: BackgroundTasks,
     r = find_row(booking_id)
     if r["Email"].lower() != user["email"]:
         raise ApiError("NOT_FOUND", 404)
-    if r["Status"] not in (PENDING, ON_HOLD, BOOKED) or r["Onsite Check-in"]:
+    if r["Status"] not in (PENDING, ON_HOLD, APPROVED, BOOKED) or r["Onsite Check-in"]:
         raise ApiError("INVALID_STATE", 409)
     reason = body.reason.strip()
+    allocation.release(booking_id, "cancelled by applicant")  # rooms are free again before the status changes
     update_cells(r["_row"], {
-        "Status": CANCELLED, "Current Approver": "", "Cancelled At": now_iso(),
+        "Status": CANCELLED, "Current Approver": "", "Cancelled At": now_iso(), "Allocated Rooms": "",
         "Approval Trail (JSON)": trail_add(r, user["email"], "cancel", text=reason),
         "Remarks": add_remark(r["Remarks"], remark_line("Applicant", user["email"], "cancelled", reason)),
     })
@@ -550,27 +562,77 @@ class DecisionIn(BaseModel):
     forwardTo: str = ""  # admin e-mail, only for decision=forward
 
 
-@app.get("/authority/admins")
-def authority_admins(authority: dict = Depends(current_authority)):
-    """Dropdown list for 'Forward': every official admin except me."""
-    return {"admins": [a for a in ADMINS if a != authority["email"]]}
+def _require_first(authority: dict):
+    if authority["email"] != FIRST_ADMIN:
+        raise ApiError("NOT_AUTHORIZED", 403)
+
+
+class AdminIn(BaseModel):
+    email: str
+    name: str = ""
+
+
+@app.get("/authority/admins/search")
+def admins_search(q: str = "", authority: dict = Depends(current_authority)):
+    """Type-ahead for 'Forward to' and for managing authorities. Never returns the whole list for an empty query."""
+    return {"admins": authorities.search(q, authority["email"], ADMINS)}
+
+
+@app.post("/authority/admins")
+def admins_add(body: AdminIn, background: BackgroundTasks, authority: dict = Depends(current_authority)):
+    """First admin adds an authority: they can sign in at once and get an e-mail."""
+    _require_first(authority)
+    email = body.email.strip().lower()
+    authorities.add(email, body.name, authority["email"])
+    background.add_task(
+        send_mail, [email], "You are now an approving authority - IIT Ropar Guest House Portal",
+        f"You have been assigned as an approving authority on the IIT Ropar Guest House Booking Portal by "
+        f"{authority['name']}.\n\nSign in with this Google account at {FRONTEND_ORIGINS[0]}/authority/login to act on "
+        "requests that are forwarded to you.\n\n-- IIT Ropar Guest House Booking Portal")
+    return {"email": email}
+
+
+@app.post("/authority/admins/remove")
+def admins_remove(body: AdminIn, background: BackgroundTasks, authority: dict = Depends(current_authority)):
+    """First admin removes an authority (login is revoked); requests currently with them return to the first admin."""
+    _require_first(authority)
+    email = body.email.strip().lower()
+    if email == FIRST_ADMIN:
+        raise ApiError("INVALID_INPUT", 422)
+    authorities.remove(email)
+    moved = 0
+    for r in read_rows():
+        if r["Current Approver"].lower() == email and r["Status"] in OPEN_STATES:
+            update_cells(r["_row"], {
+                "Current Approver": FIRST_ADMIN,
+                "Approval Trail (JSON)": trail_add(r, authority["email"], "reassign", FIRST_ADMIN, "authority removed"),
+                "Remarks": add_remark(r["Remarks"], remark_line("Admin", authority["email"], "reassigned to first admin")),
+            })
+            notify(background, [FIRST_ADMIN], f"Action needed: guest house request {r['Booking ID']}",
+                   "This request was with an authority who has been removed. It is back with you.", r)
+            moved += 1
+    return {"email": email, "reassigned": moved}
 
 
 @app.get("/authority/bookings")
 def authority_bookings(scope: str = "mine", authority: dict = Depends(current_authority)):
     """scope=mine: currently with me. history: I acted on it / it was forwarded to me. all: first admin only."""
     me = authority["email"]
-    if scope == "all" and me != FIRST_ADMIN:
+    if scope in ("all", "allocate") and me != FIRST_ADMIN:
         raise ApiError("NOT_AUTHORIZED", 403)
     out = []
     for r in reversed(read_rows()):
         mine = r["Current Approver"].lower() == me and r["Status"] in OPEN_STATES
         if scope == "mine" and not mine:
             continue
+        if scope == "allocate" and r["Status"] != APPROVED:  # accepted, waiting for room allocation
+            continue
         if scope == "history" and not any(me in (t.get("by"), t.get("to")) for t in trail_of(r)):
             continue
         item = to_api(r, True)
         item["canAct"] = mine
+        item["canAllocate"] = r["Status"] == APPROVED and me == FIRST_ADMIN
+        item["canUnallocate"] = r["Status"] == BOOKED and not r["Onsite Check-in"] and me == FIRST_ADMIN
         out.append(item)
     return {"bookings": out}
 
@@ -582,10 +644,13 @@ def authority_decide(booking_id: str, body: DecisionIn, background: BackgroundTa
     if d not in ("approve", "reject", "hold", "resume", "forward"):
         raise ApiError("INVALID_INPUT", 422)
     r = find_row(booking_id)
-    if r["Status"] not in OPEN_STATES:
+    allocating = r["Status"] == APPROVED  # accepted, waiting for the first admin to allocate rooms
+    if r["Status"] not in OPEN_STATES and not allocating:
         raise ApiError("ALREADY_DECIDED", 409)  # Booked / Rejected / Cancelled
     if r["Current Approver"].lower() != me:
         raise ApiError("NOT_AUTHORIZED", 403)  # only the admin the request is currently with can act
+    if allocating and d != "reject":
+        raise ApiError("INVALID_STATE", 409)  # at this stage the first admin can only allocate, or reject (e.g. full)
     text = body.remarks.strip()
     on_hold = r["Status"] == ON_HOLD
     if (d == "resume" and not on_hold) or (on_hold and d not in ("resume", "forward")):
@@ -595,10 +660,10 @@ def authority_decide(booking_id: str, body: DecisionIn, background: BackgroundTa
     target = ""
     if d == "forward":
         target = body.forwardTo.strip().lower()
-        if target not in ADMINS or target == me:
+        if not is_admin(target) or target == me:
             raise ApiError("INVALID_INPUT", 422)
 
-    status = {"approve": BOOKED, "reject": REJECTED, "hold": ON_HOLD, "resume": PENDING, "forward": PENDING}[d]
+    status = {"approve": APPROVED, "reject": REJECTED, "hold": ON_HOLD, "resume": PENDING, "forward": PENDING}[d]
     updates = {
         "Status": status,
         "Approval Trail (JSON)": trail_add(r, me, d, target, text),
@@ -606,10 +671,12 @@ def authority_decide(booking_id: str, body: DecisionIn, background: BackgroundTa
     }
     if d == "forward":
         updates["Current Approver"] = target
-    elif d in ("approve", "reject"):
+    elif d == "reject":
         updates["Current Approver"] = ""
-        if d == "approve":
-            updates["Approved By"] = stamp(me)
+    elif d == "approve":
+        updates["Current Approver"] = FIRST_ADMIN  # back to the first admin, who allocates the rooms
+        updates["Approved By"] = stamp(me)
+        updates["Approved By Name"] = authority["name"]
     update_cells(r["_row"], updates)
 
     # ---- e-mails: user hears about every update; the first admin about the outcome; a forward target when forwarded
@@ -621,8 +688,12 @@ def authority_decide(booking_id: str, body: DecisionIn, background: BackgroundTa
         notify(background, [r["Email"]], f"Booking {booking_id}: forwarded for approval",
                f"Your request was forwarded to {target} for approval.", r)
     elif d == "approve":
-        notify(background, [r["Email"]] + first, f"Booking {booking_id} approved",
-               "The request was approved and the booking is confirmed." + why, r)
+        notify(background, [r["Email"]], f"Booking {booking_id} approved",
+               f"Your request was approved by {authority['name']}. The Guest House will now allocate your room(s); "
+               "you will get another e-mail once the booking is confirmed." + why, r)
+        notify(background, first, f"Action needed: allocate rooms for {booking_id}",
+               f"{authority['name']} ({me}) approved this request. Open the Authority Portal > To allocate to "
+               "assign rooms and book it." + why, r)
     elif d == "reject":
         notify(background, [r["Email"]] + first, f"Booking {booking_id} rejected",
                "Unfortunately the request was rejected." + why, r)
@@ -633,7 +704,6 @@ def authority_decide(booking_id: str, body: DecisionIn, background: BackgroundTa
         notify(background, [r["Email"]], f"Booking {booking_id}: approval resumed",
                "Your request is back in the approval queue.", r)
     return {"bookingId": booking_id, "status": status}
-
 
 # ================================================================ receptionist: on-site check-in / out
 @app.get("/receptionist/bookings")
@@ -657,6 +727,7 @@ def receptionist_checkin(booking_id: str, background: BackgroundTasks,
         "Onsite Check-in": stamp(receptionist["email"]),
         "Remarks": add_remark(r["Remarks"], remark_line("Reception", receptionist["email"], "check-in")),
     })
+    allocation.mark_checkin(booking_id)  # from now on the rooms stay occupied until the actual check-out
     notify(background, [r["Email"]], f"Booking {booking_id}: checked in",
            "Your guest(s) have checked in at the Guest House.", r)
     return {"bookingId": booking_id, "checkedIn": True}
@@ -679,6 +750,7 @@ def receptionist_checkout(booking_id: str, background: BackgroundTasks,
     except Exception as exc:  # the bill can still be e-mailed / re-downloaded
         print("WARNING: could not store the bill in Drive:", repr(exc))
         bill_link = ""
+    allocation.mark_checkout(booking_id)  # actual check-out time frees the rooms for later bookings
     update_cells(r["_row"], {
         "Onsite Check-out": out_stamp, "Bill Link": bill_link, "Payment Status": PAYMENT_PENDING,
         "Remarks": add_remark(r["Remarks"], remark_line("Reception", receptionist["email"], "check-out, bill generated")),
