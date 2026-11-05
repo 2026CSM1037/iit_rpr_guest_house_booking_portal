@@ -31,11 +31,15 @@ export default function LoginPage() {
   if (status === "loading") return <p className="center mute">Loading…</p>;
 
   return (
-    <div className="card login">
-      <h1>Authority Sign In</h1>
-      <p className="mute">Guest House booking approvals</p>
+    <div className="login">
+      <div className="login-top">
+        <div className="logo lg">IIT</div>
+        <h1>Authority Sign In</h1>
+        <p>Guest House booking approvals</p>
+      </div>
+      <div className="login-body">
 
-      {error && <div className="alert" role="alert">{error}</div>}
+      {error && <div className="alert err" role="alert">{error}</div>}
 
 
       <div className="gbtn">
@@ -49,6 +53,7 @@ export default function LoginPage() {
       </div>
 
       <p className="hint">Use your official @iitrpr.ac.in account. Access is limited to registered authorities.</p>
+      </div>
     </div>
   );
 }
