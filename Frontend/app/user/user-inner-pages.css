@@ -6,7 +6,7 @@
    the user portal.
 
    CSS ONLY - no markup, logic or behaviour is touched. Every rule is scoped to
-   `.user-portal:not(:has(.home-root))`, i.e. "any user page that is NOT the
+   `.user-portal[data-page="inner"]`, i.e. "any user page that is NOT the
    home page", so home.css / the home page remain exactly as they were.
    Palette tokens are the same values used in home.css.
    ========================================================================== */
@@ -14,7 +14,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap");
 
 /* ---------- Palette & fonts ---------- */
-.user-portal:not(:has(.home-root)) {
+.user-portal[data-page="inner"] {
   --h-plum: #2a1530;
   --h-aubergine: #4a2549;
   --h-blush: #ecd6d0;
@@ -47,7 +47,7 @@
 /* ==========================================================================
    HEADER  (same plum / blush / copper treatment as the home header)
    ========================================================================== */
-.user-portal:not(:has(.home-root)) .site-header {
+.user-portal[data-page="inner"] .site-header {
   position: relative;
   z-index: 30;
   height: 104px;
@@ -56,42 +56,42 @@
   border-bottom: 1px solid rgba(236, 214, 208, .16);
   box-shadow: none;
 }
-.user-portal:not(:has(.home-root)) .brand { gap: 14px; }
-.user-portal:not(:has(.home-root)) .brand-mark {
+.user-portal[data-page="inner"] .brand { gap: 14px; }
+.user-portal[data-page="inner"] .brand-mark {
   width: 46px; height: 46px;
   border: 1px solid var(--h-blush);
   color: var(--h-blush);
   font-family: var(--h-serif);
   font-size: 15px; font-weight: 600; letter-spacing: .08em;
 }
-.user-portal:not(:has(.home-root)) .brand-hi {
+.user-portal[data-page="inner"] .brand-hi {
   font-family: var(--h-sans); font-weight: 400; font-size: 12px;
   letter-spacing: .04em; color: var(--h-blush); opacity: .9;
 }
-.user-portal:not(:has(.home-root)) .brand-en {
+.user-portal[data-page="inner"] .brand-en {
   font-family: var(--h-serif); font-size: 16px; font-weight: 500;
   letter-spacing: .09em; text-transform: uppercase; opacity: 1; margin-top: 2px; color: #fff;
 }
-.user-portal:not(:has(.home-root)) .nav { gap: 34px; align-items: center; font-size: 12px; }
-.user-portal:not(:has(.home-root)) .nav a,
-.user-portal:not(:has(.home-root)) .nav .user-auth-button {
+.user-portal[data-page="inner"] .nav { gap: 34px; align-items: center; font-size: 12px; }
+.user-portal[data-page="inner"] .nav a,
+.user-portal[data-page="inner"] .nav .user-auth-button {
   font-family: var(--h-sans);
   font-weight: 500;
   letter-spacing: .2em;
   text-transform: uppercase;
   color: #fff;
 }
-.user-portal:not(:has(.home-root)) .nav > a:not(.user-auth-link) {
+.user-portal[data-page="inner"] .nav > a:not(.user-auth-link) {
   padding: 8px 0;
   border-bottom: 1px solid transparent;
   transition: border-color .25s, color .25s;
 }
-.user-portal:not(:has(.home-root)) .nav > a:not(.user-auth-link):hover {
+.user-portal[data-page="inner"] .nav > a:not(.user-auth-link):hover {
   border-bottom-color: var(--h-copper);
   color: var(--h-blush);
 }
-.user-portal:not(:has(.home-root)) .nav .user-auth-link,
-.user-portal:not(:has(.home-root)) .nav .user-auth-button {
+.user-portal[data-page="inner"] .nav .user-auth-link,
+.user-portal[data-page="inner"] .nav .user-auth-button {
   padding: 11px 24px;
   border: 1px solid var(--h-copper);
   border-radius: 0;
@@ -99,47 +99,47 @@
   background: rgba(185, 118, 58, .12);
   transition: background .25s, color .25s;
 }
-.user-portal:not(:has(.home-root)) .nav .user-auth-link:hover,
-.user-portal:not(:has(.home-root)) .nav .user-auth-button:hover { background: var(--h-copper); }
+.user-portal[data-page="inner"] .nav .user-auth-link:hover,
+.user-portal[data-page="inner"] .nav .user-auth-button:hover { background: var(--h-copper); }
 
 /* ==========================================================================
    PAGE SHELL & HEADINGS
    ========================================================================== */
-.user-portal:not(:has(.home-root)) .page-shell { width: min(1180px, 90%); padding: 72px 0 40px; }
+.user-portal[data-page="inner"] .page-shell { width: min(1180px, 90%); padding: 72px 0 40px; }
 
-.user-portal:not(:has(.home-root)) .content-heading { position: relative; }
-.user-portal:not(:has(.home-root)) .content-heading h1,
-.user-portal:not(:has(.home-root)) .centered-page h1,
-.user-portal:not(:has(.home-root)) .status-search h1,
-.user-portal:not(:has(.home-root)) .user-login-card h1 {
+.user-portal[data-page="inner"] .content-heading { position: relative; }
+.user-portal[data-page="inner"] .content-heading h1,
+.user-portal[data-page="inner"] .centered-page h1,
+.user-portal[data-page="inner"] .status-search h1,
+.user-portal[data-page="inner"] .user-login-card h1 {
   font-family: var(--h-serif); font-weight: 500; letter-spacing: -.005em;
   color: var(--h-plum);
 }
-.user-portal:not(:has(.home-root)) .content-heading h1 {
+.user-portal[data-page="inner"] .content-heading h1 {
   margin: 0; font-size: clamp(36px, 4.6vw, 58px); line-height: 1.05;
 }
-.user-portal:not(:has(.home-root)) .content-heading h1::before {
+.user-portal[data-page="inner"] .content-heading h1::before {
   content: "Guest House";
   display: block; margin-bottom: 18px;
   font-family: var(--h-sans); font-size: 12px; font-weight: 500; letter-spacing: .34em; text-transform: uppercase;
   color: var(--h-copper);
 }
-.user-portal:not(:has(.home-root)) .content-heading h1::after {
+.user-portal[data-page="inner"] .content-heading h1::after {
   content: ""; display: block; width: 56px; height: 1px; margin-top: 22px; background: var(--h-copper);
 }
-.user-portal:not(:has(.home-root)) .content-heading p {
+.user-portal[data-page="inner"] .content-heading p {
   max-width: 640px; margin: 18px 0 0;
   font-size: 16px; line-height: 1.75; color: var(--h-muted);
 }
-.user-portal:not(:has(.home-root)) .booking-heading { margin-bottom: 30px; }
-.user-portal:not(:has(.home-root)) .booking-heading h1 { font-size: clamp(36px, 4.6vw, 58px); }
-.user-portal:not(:has(.home-root)) .booking-heading p { margin: 18px 0 0; }
+.user-portal[data-page="inner"] .booking-heading { margin-bottom: 30px; }
+.user-portal[data-page="inner"] .booking-heading h1 { font-size: clamp(36px, 4.6vw, 58px); }
+.user-portal[data-page="inner"] .booking-heading p { margin: 18px 0 0; }
 
 /* ==========================================================================
    BUTTONS
    ========================================================================== */
-.user-portal:not(:has(.home-root)) .primary-button,
-.user-portal:not(:has(.home-root)) .secondary-button {
+.user-portal[data-page="inner"] .primary-button,
+.user-portal[data-page="inner"] .secondary-button {
   min-height: 52px; padding: 0 34px; gap: 12px;
   border-radius: 0;
   font-family: var(--h-sans); font-size: 12px; font-weight: 500;
@@ -147,295 +147,295 @@
   box-shadow: none;
   transition: background .25s, border-color .25s, color .25s, transform .25s;
 }
-.user-portal:not(:has(.home-root)) .primary-button { background: var(--h-copper); border: 1px solid var(--h-copper); color: #fff; }
-.user-portal:not(:has(.home-root)) .primary-button:hover:not(:disabled) {
+.user-portal[data-page="inner"] .primary-button { background: var(--h-copper); border: 1px solid var(--h-copper); color: #fff; }
+.user-portal[data-page="inner"] .primary-button:hover:not(:disabled) {
   background: var(--h-copper-dark); border-color: var(--h-copper-dark); transform: translateY(-2px);
 }
-.user-portal:not(:has(.home-root)) .primary-button:disabled { opacity: .55; cursor: not-allowed; }
-.user-portal:not(:has(.home-root)) .secondary-button { background: transparent; border: 1px solid var(--h-copper); color: var(--h-copper-dark); }
-.user-portal:not(:has(.home-root)) .secondary-button:hover:not(:disabled) { background: var(--h-copper); color: #fff; }
-.user-portal:not(:has(.home-root)) .flow-actions .primary-button,
-.user-portal:not(:has(.home-root)) .flow-actions .secondary-button { border-radius: 0; border-color: var(--h-copper); }
-.user-portal:not(:has(.home-root)) .flow-actions .primary-button { background: var(--h-copper); }
-.user-portal:not(:has(.home-root)) .flow-actions .primary-button:hover:not(:disabled) { background: var(--h-copper-dark); border-color: var(--h-copper-dark); }
-.user-portal:not(:has(.home-root)) .flow-actions .secondary-button { color: var(--h-copper-dark); background: transparent; }
-.user-portal:not(:has(.home-root)) .flow-actions .secondary-button:hover:not(:disabled) { background: var(--h-copper); color: #fff; }
-.user-portal:not(:has(.home-root)) .compact-button { min-height: 44px; padding: 0 24px; border-color: var(--h-copper); color: var(--h-copper-dark); border-radius: 0; }
-.user-portal:not(:has(.home-root)) .compact-button:disabled { opacity: .45; }
-.user-portal:not(:has(.home-root)) .flow-actions { margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--h-line); padding-bottom: 8px; }
+.user-portal[data-page="inner"] .primary-button:disabled { opacity: .55; cursor: not-allowed; }
+.user-portal[data-page="inner"] .secondary-button { background: transparent; border: 1px solid var(--h-copper); color: var(--h-copper-dark); }
+.user-portal[data-page="inner"] .secondary-button:hover:not(:disabled) { background: var(--h-copper); color: #fff; }
+.user-portal[data-page="inner"] .flow-actions .primary-button,
+.user-portal[data-page="inner"] .flow-actions .secondary-button { border-radius: 0; border-color: var(--h-copper); }
+.user-portal[data-page="inner"] .flow-actions .primary-button { background: var(--h-copper); }
+.user-portal[data-page="inner"] .flow-actions .primary-button:hover:not(:disabled) { background: var(--h-copper-dark); border-color: var(--h-copper-dark); }
+.user-portal[data-page="inner"] .flow-actions .secondary-button { color: var(--h-copper-dark); background: transparent; }
+.user-portal[data-page="inner"] .flow-actions .secondary-button:hover:not(:disabled) { background: var(--h-copper); color: #fff; }
+.user-portal[data-page="inner"] .compact-button { min-height: 44px; padding: 0 24px; border-color: var(--h-copper); color: var(--h-copper-dark); border-radius: 0; }
+.user-portal[data-page="inner"] .compact-button:disabled { opacity: .45; }
+.user-portal[data-page="inner"] .flow-actions { margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--h-line); padding-bottom: 8px; }
 
 /* ==========================================================================
    BOOKING STEPPER
    ========================================================================== */
-.user-portal:not(:has(.home-root)) .booking-stepper { margin: 8px 0 38px; }
-.user-portal:not(:has(.home-root)) .booking-stepper::before { top: 18px; height: 1px; background: var(--h-line); }
-.user-portal:not(:has(.home-root)) .booking-step { color: var(--h-muted); }
-.user-portal:not(:has(.home-root)) .booking-step span {
+.user-portal[data-page="inner"] .booking-stepper { margin: 8px 0 38px; }
+.user-portal[data-page="inner"] .booking-stepper::before { top: 18px; height: 1px; background: var(--h-line); }
+.user-portal[data-page="inner"] .booking-step { color: var(--h-muted); }
+.user-portal[data-page="inner"] .booking-step span {
   width: 38px; height: 38px; margin-bottom: 12px;
   border: 1px solid var(--h-line); background: var(--h-cream); color: var(--h-muted);
   font-family: var(--h-serif); font-size: 18px;
 }
-.user-portal:not(:has(.home-root)) .booking-step b {
+.user-portal[data-page="inner"] .booking-step b {
   font-family: var(--h-sans); font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase;
 }
-.user-portal:not(:has(.home-root)) .booking-step.active { color: var(--h-plum); }
-.user-portal:not(:has(.home-root)) .booking-step.active span { background: var(--h-copper); border-color: var(--h-copper); color: #fff; }
-.user-portal:not(:has(.home-root)) .booking-step.complete span { background: var(--h-plum); border-color: var(--h-plum); color: var(--h-blush); }
-.user-portal:not(:has(.home-root)) .booking-step.active b { font-weight: 600; }
+.user-portal[data-page="inner"] .booking-step.active { color: var(--h-plum); }
+.user-portal[data-page="inner"] .booking-step.active span { background: var(--h-copper); border-color: var(--h-copper); color: #fff; }
+.user-portal[data-page="inner"] .booking-step.complete span { background: var(--h-plum); border-color: var(--h-plum); color: var(--h-blush); }
+.user-portal[data-page="inner"] .booking-step.active b { font-weight: 600; }
 
 /* ==========================================================================
    FORM SECTIONS & FIELDS
    ========================================================================== */
-.user-portal:not(:has(.home-root)) .form-section,
-.user-portal:not(:has(.home-root)) .review-card,
-.user-portal:not(:has(.home-root)) .panel,
-.user-portal:not(:has(.home-root)) .summary-panel,
-.user-portal:not(:has(.home-root)) .error-box {
+.user-portal[data-page="inner"] .form-section,
+.user-portal[data-page="inner"] .review-card,
+.user-portal[data-page="inner"] .panel,
+.user-portal[data-page="inner"] .summary-panel,
+.user-portal[data-page="inner"] .error-box {
   border: 1px solid var(--h-line); border-radius: 0; background: #fff;
   box-shadow: 0 24px 50px -34px rgba(42, 21, 48, .35);
 }
-.user-portal:not(:has(.home-root)) .form-section { margin-bottom: 22px; }
-.user-portal:not(:has(.home-root)) .form-section h2,
-.user-portal:not(:has(.home-root)) .review-card h2,
-.user-portal:not(:has(.home-root)) .summary-panel h2,
-.user-portal:not(:has(.home-root)) .panel h1,
-.user-portal:not(:has(.home-root)) .panel h2 {
+.user-portal[data-page="inner"] .form-section { margin-bottom: 22px; }
+.user-portal[data-page="inner"] .form-section h2,
+.user-portal[data-page="inner"] .review-card h2,
+.user-portal[data-page="inner"] .summary-panel h2,
+.user-portal[data-page="inner"] .panel h1,
+.user-portal[data-page="inner"] .panel h2 {
   margin: 0; padding: 18px 24px;
   background: var(--h-plum); color: var(--h-blush);
   border-bottom: 0;
   font-family: var(--h-sans); font-size: 11px; font-weight: 500; letter-spacing: .26em; text-transform: uppercase;
 }
-.user-portal:not(:has(.home-root)) .section-title-row { background: var(--h-plum); }
-.user-portal:not(:has(.home-root)) .section-title-row h2 { background: transparent; }
-.user-portal:not(:has(.home-root)) .remove-guest {
+.user-portal[data-page="inner"] .section-title-row { background: var(--h-plum); }
+.user-portal[data-page="inner"] .section-title-row h2 { background: transparent; }
+.user-portal[data-page="inner"] .remove-guest {
   margin-right: 22px; color: var(--h-blush);
   font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
   border-bottom: 1px solid var(--h-copper); padding: 0 0 3px;
 }
-.user-portal:not(:has(.home-root)) .remove-guest:hover { color: var(--h-copper); }
-.user-portal:not(:has(.home-root)) .form-grid { gap: 26px 40px; padding: 30px 24px; }
-.user-portal:not(:has(.home-root)) .field { gap: 9px; }
-.user-portal:not(:has(.home-root)) .field > span {
+.user-portal[data-page="inner"] .remove-guest:hover { color: var(--h-copper); }
+.user-portal[data-page="inner"] .form-grid { gap: 26px 40px; padding: 30px 24px; }
+.user-portal[data-page="inner"] .field { gap: 9px; }
+.user-portal[data-page="inner"] .field > span {
   font-family: var(--h-sans); font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
   color: var(--h-plum);
 }
-.user-portal:not(:has(.home-root)) .field input,
-.user-portal:not(:has(.home-root)) .field select {
+.user-portal[data-page="inner"] .field input,
+.user-portal[data-page="inner"] .field select {
   height: 48px; padding: 0 14px;
   border: 1px solid var(--h-line); border-radius: 0; background: var(--h-cream);
   color: var(--h-ink); font-family: var(--h-sans); font-size: 14px;
   transition: border-color .25s, background .25s, box-shadow .25s;
 }
-.user-portal:not(:has(.home-root)) .field input::placeholder { color: #a8949f; }
-.user-portal:not(:has(.home-root)) .field input:focus,
-.user-portal:not(:has(.home-root)) .field select:focus {
+.user-portal[data-page="inner"] .field input::placeholder { color: #a8949f; }
+.user-portal[data-page="inner"] .field input:focus,
+.user-portal[data-page="inner"] .field select:focus {
   border-color: var(--h-copper); background: #fff; box-shadow: 0 0 0 3px rgba(185, 118, 58, .16);
 }
-.user-portal:not(:has(.home-root)) .field input:disabled,
-.user-portal:not(:has(.home-root)) .field input:read-only:not([type="checkbox"]) { background: var(--h-blush-soft); color: var(--h-muted); }
-.user-portal:not(:has(.home-root)) .field input:disabled { cursor: not-allowed; border-color: var(--h-line); }
-.user-portal:not(:has(.home-root)) .field-disabled > span { color: var(--h-muted); }
-.user-portal:not(:has(.home-root)) .field small { color: var(--h-muted); font-size: 12px; margin-top: 0; }
+.user-portal[data-page="inner"] .field input:disabled,
+.user-portal[data-page="inner"] .field input:read-only:not([type="checkbox"]) { background: var(--h-blush-soft); color: var(--h-muted); }
+.user-portal[data-page="inner"] .field input:disabled { cursor: not-allowed; border-color: var(--h-line); }
+.user-portal[data-page="inner"] .field-disabled > span { color: var(--h-muted); }
+.user-portal[data-page="inner"] .field small { color: var(--h-muted); font-size: 12px; margin-top: 0; }
 
-.user-portal:not(:has(.home-root)) .policy-note,
-.user-portal:not(:has(.home-root)) .calculation-mini,
-.user-portal:not(:has(.home-root)) .info-alert {
+.user-portal[data-page="inner"] .policy-note,
+.user-portal[data-page="inner"] .calculation-mini,
+.user-portal[data-page="inner"] .info-alert {
   margin: 26px 0; padding: 22px 28px;
   border: 0; border-left: 3px solid var(--h-copper); border-radius: 0;
   background: var(--h-blush-soft);
   font-size: 14px; line-height: 1.75; color: var(--h-ink);
 }
-.user-portal:not(:has(.home-root)) .policy-note strong,
-.user-portal:not(:has(.home-root)) .calculation-mini strong { color: var(--h-plum); font-weight: 600; }
-.user-portal:not(:has(.home-root)) .info-alert { text-align: left; }
+.user-portal[data-page="inner"] .policy-note strong,
+.user-portal[data-page="inner"] .calculation-mini strong { color: var(--h-plum); font-weight: 600; }
+.user-portal[data-page="inner"] .info-alert { text-align: left; }
 
-.user-portal:not(:has(.home-root)) .section-bottom-row { padding: 0 24px 28px; }
-.user-portal:not(:has(.home-root)) .section-bottom-row span { color: var(--h-muted); font-size: 13px; }
+.user-portal[data-page="inner"] .section-bottom-row { padding: 0 24px 28px; }
+.user-portal[data-page="inner"] .section-bottom-row span { color: var(--h-muted); font-size: 13px; }
 
-.user-portal:not(:has(.home-root)) .form-error,
-.user-portal:not(:has(.home-root)) .user-login-error {
+.user-portal[data-page="inner"] .form-error,
+.user-portal[data-page="inner"] .user-login-error {
   padding: 16px 22px; border: 0; border-left: 3px solid #b3261e; border-radius: 0;
   background: #fbeceb; color: #8a1c16;
   font-size: 14px;
 }
-.user-portal:not(:has(.home-root)) .form-error { margin-bottom: 22px; }
+.user-portal[data-page="inner"] .form-error { margin-bottom: 22px; }
 
 /* documents */
-.user-portal:not(:has(.home-root)) .documents-content { padding: 30px 24px; }
-.user-portal:not(:has(.home-root)) .upload-area { color: var(--h-ink); font-size: 13px; margin-bottom: 28px; }
-.user-portal:not(:has(.home-root)) .upload-area > strong {
+.user-portal[data-page="inner"] .documents-content { padding: 30px 24px; }
+.user-portal[data-page="inner"] .upload-area { color: var(--h-ink); font-size: 13px; margin-bottom: 28px; }
+.user-portal[data-page="inner"] .upload-area > strong {
   margin-bottom: 12px;
   font-family: var(--h-sans); font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
   color: var(--h-plum); line-height: 1.7;
 }
-.user-portal:not(:has(.home-root)) .drop-zone {
+.user-portal[data-page="inner"] .drop-zone {
   min-height: 140px; border: 1px dashed var(--h-copper); border-radius: 0; background: var(--h-cream);
   color: var(--h-ink); transition: background .25s;
 }
-.user-portal:not(:has(.home-root)) .drop-zone:hover { background: var(--h-blush-soft); }
-.user-portal:not(:has(.home-root)) .drop-zone b { font-family: var(--h-serif); font-size: 20px; font-weight: 500; color: var(--h-plum); text-align: center; }
-.user-portal:not(:has(.home-root)) .drop-zone small { color: var(--h-muted); }
-.user-portal:not(:has(.home-root)) .upload-plus { width: 40px; height: 40px; background: transparent; border: 1px solid var(--h-copper); color: var(--h-copper); font-family: var(--h-serif); }
-.user-portal:not(:has(.home-root)) .attached-files { border: 1px solid var(--h-line); border-radius: 0; background: var(--h-cream); padding: 20px; color: var(--h-ink); }
-.user-portal:not(:has(.home-root)) .attached-files strong {
+.user-portal[data-page="inner"] .drop-zone:hover { background: var(--h-blush-soft); }
+.user-portal[data-page="inner"] .drop-zone b { font-family: var(--h-serif); font-size: 20px; font-weight: 500; color: var(--h-plum); text-align: center; }
+.user-portal[data-page="inner"] .drop-zone small { color: var(--h-muted); }
+.user-portal[data-page="inner"] .upload-plus { width: 40px; height: 40px; background: transparent; border: 1px solid var(--h-copper); color: var(--h-copper); font-family: var(--h-serif); }
+.user-portal[data-page="inner"] .attached-files { border: 1px solid var(--h-line); border-radius: 0; background: var(--h-cream); padding: 20px; color: var(--h-ink); }
+.user-portal[data-page="inner"] .attached-files strong {
   font-family: var(--h-sans); font-size: 11px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--h-copper-dark);
 }
-.user-portal:not(:has(.home-root)) .file-chip { background: #fff; border: 1px solid var(--h-line); color: var(--h-ink); padding: 12px 14px; }
-.user-portal:not(:has(.home-root)) .attached-files > span { color: var(--h-muted); }
+.user-portal[data-page="inner"] .file-chip { background: #fff; border: 1px solid var(--h-line); color: var(--h-ink); padding: 12px 14px; }
+.user-portal[data-page="inner"] .attached-files > span { color: var(--h-muted); }
 
 /* review & submit */
-.user-portal:not(:has(.home-root)) .review-card { margin-bottom: 22px; }
-.user-portal:not(:has(.home-root)) .review-item { padding: 18px 24px; border-top: 1px solid var(--h-line); font-size: 14px; }
-.user-portal:not(:has(.home-root)) .review-grid .review-item:nth-child(-n+2) { border-top: 0; }
-.user-portal:not(:has(.home-root)) .review-item span {
+.user-portal[data-page="inner"] .review-card { margin-bottom: 22px; }
+.user-portal[data-page="inner"] .review-item { padding: 18px 24px; border-top: 1px solid var(--h-line); font-size: 14px; }
+.user-portal[data-page="inner"] .review-grid .review-item:nth-child(-n+2) { border-top: 0; }
+.user-portal[data-page="inner"] .review-item span {
   color: var(--h-muted); font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
 }
-.user-portal:not(:has(.home-root)) .review-item strong { color: var(--h-plum); font-family: var(--h-serif); font-size: 20px; font-weight: 600; }
-.user-portal:not(:has(.home-root)) .summary-box,
-.user-portal:not(:has(.home-root)) .detailed-summary {
+.user-portal[data-page="inner"] .review-item strong { color: var(--h-plum); font-family: var(--h-serif); font-size: 20px; font-weight: 600; }
+.user-portal[data-page="inner"] .summary-box,
+.user-portal[data-page="inner"] .detailed-summary {
   padding: 28px 32px; border: 0; border-radius: 0; background: var(--h-aubergine);
   margin-bottom: 26px;
 }
-.user-portal:not(:has(.home-root)) .summary-box strong {
+.user-portal[data-page="inner"] .summary-box strong {
   color: var(--h-blush); font-family: var(--h-serif); font-style: italic; font-weight: 500; font-size: 22px;
 }
-.user-portal:not(:has(.home-root)) .summary-box span { color: rgba(236, 214, 208, .8); font-size: 13px; letter-spacing: .02em; }
-.user-portal:not(:has(.home-root)) .summary-amount { font-family: var(--h-serif); font-size: 40px; font-weight: 500; color: #fff; }
-.user-portal:not(:has(.home-root)) .terms-check {
+.user-portal[data-page="inner"] .summary-box span { color: rgba(236, 214, 208, .8); font-size: 13px; letter-spacing: .02em; }
+.user-portal[data-page="inner"] .summary-amount { font-family: var(--h-serif); font-size: 40px; font-weight: 500; color: #fff; }
+.user-portal[data-page="inner"] .terms-check {
   padding: 8px 0 4px; font-size: 13px; font-weight: 500; letter-spacing: .06em; color: var(--h-plum);
 }
-.user-portal:not(:has(.home-root)) .terms-check input { accent-color: var(--h-copper); }
+.user-portal[data-page="inner"] .terms-check input { accent-color: var(--h-copper); }
 
 /* ==========================================================================
    BOOKING STATUS
    ========================================================================== */
-.user-portal:not(:has(.home-root)) .status-page { gap: 32px; align-items: start; }
-.user-portal:not(:has(.home-root)) .status-search form { padding: 30px 24px; gap: 22px; }
-.user-portal:not(:has(.home-root)) .status-search > div { padding: 0 24px 28px; }
-.user-portal:not(:has(.home-root)) .status-search > div > strong {
+.user-portal[data-page="inner"] .status-page { gap: 32px; align-items: start; }
+.user-portal[data-page="inner"] .status-search form { padding: 30px 24px; gap: 22px; }
+.user-portal[data-page="inner"] .status-search > div { padding: 0 24px 28px; }
+.user-portal[data-page="inner"] .status-search > div > strong {
   display: block; font-size: 11px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--h-copper-dark);
 }
-.user-portal:not(:has(.home-root)) .status-search .secondary-button { text-transform: none; letter-spacing: .04em; font-size: 13px; justify-content: flex-start; padding: 0 18px; }
-.user-portal:not(:has(.home-root)) .status-title { background: var(--h-plum); padding-right: 24px; }
-.user-portal:not(:has(.home-root)) .status-title h2 { background: transparent; }
-.user-portal:not(:has(.home-root)) .approved-pill {
+.user-portal[data-page="inner"] .status-search .secondary-button { text-transform: none; letter-spacing: .04em; font-size: 13px; justify-content: flex-start; padding: 0 18px; }
+.user-portal[data-page="inner"] .status-title { background: var(--h-plum); padding-right: 24px; }
+.user-portal[data-page="inner"] .status-title h2 { background: transparent; }
+.user-portal[data-page="inner"] .approved-pill {
   margin-right: 0; padding: 7px 16px; border-radius: 0; background: var(--h-copper);
   font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase;
 }
-.user-portal:not(:has(.home-root)) .status-table { padding: 8px 0; }
-.user-portal:not(:has(.home-root)) .summary-row {
+.user-portal[data-page="inner"] .status-table { padding: 8px 0; }
+.user-portal[data-page="inner"] .summary-row {
   padding: 16px 24px; border-bottom: 1px solid var(--h-line); font-size: 14px; color: var(--h-ink);
 }
-.user-portal:not(:has(.home-root)) .summary-row:last-child { border-bottom: 0; }
-.user-portal:not(:has(.home-root)) .summary-row span {
+.user-portal[data-page="inner"] .summary-row:last-child { border-bottom: 0; }
+.user-portal[data-page="inner"] .summary-row span {
   color: var(--h-muted); font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; align-self: center;
 }
-.user-portal:not(:has(.home-root)) .summary-row strong { font-family: var(--h-serif); font-size: 19px; font-weight: 600; color: var(--h-plum); text-align: right; }
-.user-portal:not(:has(.home-root)) .status-result { padding-bottom: 30px; }
-.user-portal:not(:has(.home-root)) .status-result h3 {
+.user-portal[data-page="inner"] .summary-row strong { font-family: var(--h-serif); font-size: 19px; font-weight: 600; color: var(--h-plum); text-align: right; }
+.user-portal[data-page="inner"] .status-result { padding-bottom: 30px; }
+.user-portal[data-page="inner"] .status-result h3 {
   margin: 22px 0 8px; padding: 0 24px;
   font-family: var(--h-serif); font-size: 26px; font-weight: 500; color: var(--h-plum);
 }
-.user-portal:not(:has(.home-root)) .status-result > p { padding: 0 24px; color: var(--h-muted); line-height: 1.7; font-size: 14px; }
-.user-portal:not(:has(.home-root)) .timeline { margin: 14px 24px 0 34px; border-left: 1px solid var(--h-line); }
-.user-portal:not(:has(.home-root)) .timeline li { padding: 12px 0 12px 32px; font-size: 14px; color: var(--h-muted); }
-.user-portal:not(:has(.home-root)) .timeline li strong { font-weight: 500; letter-spacing: .02em; }
-.user-portal:not(:has(.home-root)) .timeline li.done strong { color: var(--h-plum); font-weight: 600; }
-.user-portal:not(:has(.home-root)) .timeline-dot { left: -11px; border: 1px solid var(--h-line); background: var(--h-cream); }
-.user-portal:not(:has(.home-root)) .timeline li.done .timeline-dot { background: var(--h-copper); border-color: var(--h-copper); }
-.user-portal:not(:has(.home-root)) .timeline time { color: var(--h-copper-dark); font-family: var(--h-serif); font-size: 16px; }
-.user-portal:not(:has(.home-root)) .inline-error { color: #8a1c16; font-size: 13px; }
+.user-portal[data-page="inner"] .status-result > p { padding: 0 24px; color: var(--h-muted); line-height: 1.7; font-size: 14px; }
+.user-portal[data-page="inner"] .timeline { margin: 14px 24px 0 34px; border-left: 1px solid var(--h-line); }
+.user-portal[data-page="inner"] .timeline li { padding: 12px 0 12px 32px; font-size: 14px; color: var(--h-muted); }
+.user-portal[data-page="inner"] .timeline li strong { font-weight: 500; letter-spacing: .02em; }
+.user-portal[data-page="inner"] .timeline li.done strong { color: var(--h-plum); font-weight: 600; }
+.user-portal[data-page="inner"] .timeline-dot { left: -11px; border: 1px solid var(--h-line); background: var(--h-cream); }
+.user-portal[data-page="inner"] .timeline li.done .timeline-dot { background: var(--h-copper); border-color: var(--h-copper); }
+.user-portal[data-page="inner"] .timeline time { color: var(--h-copper-dark); font-family: var(--h-serif); font-size: 16px; }
+.user-portal[data-page="inner"] .inline-error { color: #8a1c16; font-size: 13px; }
 
 /* ==========================================================================
    SIGN-IN
    ========================================================================== */
-.user-portal:not(:has(.home-root)) .user-login-page { min-height: 58vh; }
-.user-portal:not(:has(.home-root)) .user-login-card { width: min(540px, 100%); padding: 0 0 44px; }
-.user-portal:not(:has(.home-root)) .user-login-card h1 {
+.user-portal[data-page="inner"] .user-login-page { min-height: 58vh; }
+.user-portal[data-page="inner"] .user-login-card { width: min(540px, 100%); padding: 0 0 44px; }
+.user-portal[data-page="inner"] .user-login-card h1 {
   margin: 0 0 20px; padding: 30px 32px 0; background: transparent;
   font-size: 36px; line-height: 1.1; text-align: center;
 }
-.user-portal:not(:has(.home-root)) .user-login-card h1::after { content: ""; display: block; width: 56px; height: 1px; margin: 22px auto 0; background: var(--h-copper); }
-.user-portal:not(:has(.home-root)) .user-login-card p { padding: 0 32px; color: var(--h-muted); line-height: 1.7; }
-.user-portal:not(:has(.home-root)) .user-login-card .user-login-error { margin: 18px 32px 0; padding: 14px 18px; text-align: left; }
-.user-portal:not(:has(.home-root)) .user-login-hint { font-size: 12px; letter-spacing: .06em; }
+.user-portal[data-page="inner"] .user-login-card h1::after { content: ""; display: block; width: 56px; height: 1px; margin: 22px auto 0; background: var(--h-copper); }
+.user-portal[data-page="inner"] .user-login-card p { padding: 0 32px; color: var(--h-muted); line-height: 1.7; }
+.user-portal[data-page="inner"] .user-login-card .user-login-error { margin: 18px 32px 0; padding: 14px 18px; text-align: left; }
+.user-portal[data-page="inner"] .user-login-hint { font-size: 12px; letter-spacing: .06em; }
 
 /* ==========================================================================
    CONFIRMATION & ERROR
    ========================================================================== */
-.user-portal:not(:has(.home-root)) .centered-page { max-width: 820px; }
-.user-portal:not(:has(.home-root)) .centered-page h1 { font-size: clamp(32px, 4vw, 48px); line-height: 1.1; margin: 14px 0 12px; }
-.user-portal:not(:has(.home-root)) .center-copy { font-size: 16px; line-height: 1.75; color: var(--h-muted); }
-.user-portal:not(:has(.home-root)) .success-icon,
-.user-portal:not(:has(.home-root)) .error-icon {
+.user-portal[data-page="inner"] .centered-page { max-width: 820px; }
+.user-portal[data-page="inner"] .centered-page h1 { font-size: clamp(32px, 4vw, 48px); line-height: 1.1; margin: 14px 0 12px; }
+.user-portal[data-page="inner"] .center-copy { font-size: 16px; line-height: 1.75; color: var(--h-muted); }
+.user-portal[data-page="inner"] .success-icon,
+.user-portal[data-page="inner"] .error-icon {
   width: 80px; height: 80px; background: transparent;
   font-family: var(--h-serif); font-weight: 500; font-size: 38px;
 }
-.user-portal:not(:has(.home-root)) .success-icon { border: 1px solid var(--h-copper); color: var(--h-copper); background: transparent; }
-.user-portal:not(:has(.home-root)) .error-icon { border: 1px solid #b3261e; color: #b3261e; }
-.user-portal:not(:has(.home-root)) .request-id-card {
+.user-portal[data-page="inner"] .success-icon { border: 1px solid var(--h-copper); color: var(--h-copper); background: transparent; }
+.user-portal[data-page="inner"] .error-icon { border: 1px solid #b3261e; color: #b3261e; }
+.user-portal[data-page="inner"] .request-id-card {
   padding: 30px 32px; border: 0; border-radius: 0; background: var(--h-aubergine); text-align: left;
 }
-.user-portal:not(:has(.home-root)) .request-id-card span {
+.user-portal[data-page="inner"] .request-id-card span {
   color: var(--h-blush); font-size: 11px; font-weight: 500; letter-spacing: .26em; text-transform: uppercase;
 }
-.user-portal:not(:has(.home-root)) .request-id-card strong { font-family: var(--h-serif); font-size: 44px; font-weight: 500; color: #fff; letter-spacing: .06em; }
-.user-portal:not(:has(.home-root)) .request-id-card button {
+.user-portal[data-page="inner"] .request-id-card strong { font-family: var(--h-serif); font-size: 44px; font-weight: 500; color: #fff; letter-spacing: .06em; }
+.user-portal[data-page="inner"] .request-id-card button {
   border: 1px solid var(--h-copper); background: transparent; color: var(--h-blush); border-radius: 0; padding: 12px 22px;
   font-size: 11px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; transition: background .25s, color .25s;
 }
-.user-portal:not(:has(.home-root)) .request-id-card button:hover { background: var(--h-copper); color: #fff; }
-.user-portal:not(:has(.home-root)) .summary-panel { margin-top: 26px; }
-.user-portal:not(:has(.home-root)) .info-alert { margin-top: 26px; }
-.user-portal:not(:has(.home-root)) .two-actions { margin-top: 34px; gap: 16px; }
-.user-portal:not(:has(.home-root)) .error-page { border: 0; background: transparent; padding: 72px 0 40px; }
-.user-portal:not(:has(.home-root)) .error-box { margin-top: 30px; padding: 0; background: #fff; border-color: var(--h-line); }
-.user-portal:not(:has(.home-root)) .error-box h2 {
+.user-portal[data-page="inner"] .request-id-card button:hover { background: var(--h-copper); color: #fff; }
+.user-portal[data-page="inner"] .summary-panel { margin-top: 26px; }
+.user-portal[data-page="inner"] .info-alert { margin-top: 26px; }
+.user-portal[data-page="inner"] .two-actions { margin-top: 34px; gap: 16px; }
+.user-portal[data-page="inner"] .error-page { border: 0; background: transparent; padding: 72px 0 40px; }
+.user-portal[data-page="inner"] .error-box { margin-top: 30px; padding: 0; background: #fff; border-color: var(--h-line); }
+.user-portal[data-page="inner"] .error-box h2 {
   margin: 0; padding: 18px 24px; background: #b3261e; color: #fff;
   font-size: 11px; letter-spacing: .26em; text-transform: uppercase; font-weight: 500;
 }
-.user-portal:not(:has(.home-root)) .error-box p { padding: 20px 24px; color: var(--h-ink); line-height: 1.7; }
+.user-portal[data-page="inner"] .error-box p { padding: 20px 24px; color: var(--h-ink); line-height: 1.7; }
 
 /* ==========================================================================
    FOOTER  (same as home)
    ========================================================================== */
-.user-portal:not(:has(.home-root)) .site-footer {
+.user-portal[data-page="inner"] .site-footer {
   margin-top: 72px; min-height: 120px; padding: 34px var(--h-gutter);
   background: var(--h-plum); border-top: 1px solid rgba(236, 214, 208, .16);
 }
-.user-portal:not(:has(.home-root)) .footer-brand .brand-mark { border-color: var(--h-blush); color: var(--h-blush); font-family: var(--h-serif); }
-.user-portal:not(:has(.home-root)) .footer-brand .brand-hi { color: var(--h-blush); font-weight: 400; }
-.user-portal:not(:has(.home-root)) .footer-brand .brand-en {
+.user-portal[data-page="inner"] .footer-brand .brand-mark { border-color: var(--h-blush); color: var(--h-blush); font-family: var(--h-serif); }
+.user-portal[data-page="inner"] .footer-brand .brand-hi { color: var(--h-blush); font-weight: 400; }
+.user-portal[data-page="inner"] .footer-brand .brand-en {
   font-family: var(--h-serif); font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: #fff;
 }
-.user-portal:not(:has(.home-root)) .footer-links { gap: 28px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
-.user-portal:not(:has(.home-root)) .footer-links a { color: var(--h-blush); transition: color .25s; }
-.user-portal:not(:has(.home-root)) .footer-links a:hover { color: var(--h-copper); }
+.user-portal[data-page="inner"] .footer-links { gap: 28px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
+.user-portal[data-page="inner"] .footer-links a { color: var(--h-blush); transition: color .25s; }
+.user-portal[data-page="inner"] .footer-links a:hover { color: var(--h-copper); }
 
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */
 @media (max-width: 800px) {
-  .user-portal:not(:has(.home-root)) .site-header {
+  .user-portal[data-page="inner"] .site-header {
     height: auto; padding: 16px var(--h-gutter) 18px; gap: 14px;
   }
-  .user-portal:not(:has(.home-root)) .nav { gap: 14px 18px; flex-wrap: wrap; justify-content: flex-start; }
-  .user-portal:not(:has(.home-root)) .nav > a:not(.user-auth-link) { padding: 6px 0; }
-  .user-portal:not(:has(.home-root)) .nav .user-auth-link,
-  .user-portal:not(:has(.home-root)) .nav .user-auth-button { width: auto; padding: 9px 16px; }
+  .user-portal[data-page="inner"] .nav { gap: 14px 18px; flex-wrap: wrap; justify-content: flex-start; }
+  .user-portal[data-page="inner"] .nav > a:not(.user-auth-link) { padding: 6px 0; }
+  .user-portal[data-page="inner"] .nav .user-auth-link,
+  .user-portal[data-page="inner"] .nav .user-auth-button { width: auto; padding: 9px 16px; }
 
-  .user-portal:not(:has(.home-root)) .page-shell { padding-top: 48px; }
-  .user-portal:not(:has(.home-root)) .form-grid { padding: 24px 18px; gap: 22px; }
-  .user-portal:not(:has(.home-root)) .booking-step b { font-size: 9px; letter-spacing: .1em; }
-  .user-portal:not(:has(.home-root)) .booking-step span { width: 34px; height: 34px; font-size: 16px; }
-  .user-portal:not(:has(.home-root)) .review-item { padding: 16px 18px; }
-  .user-portal:not(:has(.home-root)) .review-grid .review-item:nth-child(2) { border-top: 1px solid var(--h-line); }
-  .user-portal:not(:has(.home-root)) .status-page { gap: 24px; }
-  .user-portal:not(:has(.home-root)) .summary-box { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .user-portal:not(:has(.home-root)) .request-id-card strong { font-size: 32px; }
-  .user-portal:not(:has(.home-root)) .request-id-card { grid-template-columns: 1fr; }
-  .user-portal:not(:has(.home-root)) .request-id-card button { justify-self: start; }
-  .user-portal:not(:has(.home-root)) .primary-button,
-  .user-portal:not(:has(.home-root)) .secondary-button { width: 100%; }
-  .user-portal:not(:has(.home-root)) .site-footer { margin-top: 56px; align-items: flex-start; }
+  .user-portal[data-page="inner"] .page-shell { padding-top: 48px; }
+  .user-portal[data-page="inner"] .form-grid { padding: 24px 18px; gap: 22px; }
+  .user-portal[data-page="inner"] .booking-step b { font-size: 9px; letter-spacing: .1em; }
+  .user-portal[data-page="inner"] .booking-step span { width: 34px; height: 34px; font-size: 16px; }
+  .user-portal[data-page="inner"] .review-item { padding: 16px 18px; }
+  .user-portal[data-page="inner"] .review-grid .review-item:nth-child(2) { border-top: 1px solid var(--h-line); }
+  .user-portal[data-page="inner"] .status-page { gap: 24px; }
+  .user-portal[data-page="inner"] .summary-box { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .user-portal[data-page="inner"] .request-id-card strong { font-size: 32px; }
+  .user-portal[data-page="inner"] .request-id-card { grid-template-columns: 1fr; }
+  .user-portal[data-page="inner"] .request-id-card button { justify-self: start; }
+  .user-portal[data-page="inner"] .primary-button,
+  .user-portal[data-page="inner"] .secondary-button { width: 100%; }
+  .user-portal[data-page="inner"] .site-footer { margin-top: 56px; align-items: flex-start; }
 }

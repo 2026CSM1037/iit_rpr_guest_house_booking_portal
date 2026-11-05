@@ -5,13 +5,13 @@
    Every rule below is scoped to `.home-root` (the wrapper in page.tsx), so
    Book Online, Booking Status, Login, Confirmation and Error pages are NOT
    affected. The shared Header/Footer are restyled only while the home page
-   is on screen, via  .user-portal:has(.home-root)
+   is on screen, via  .user-portal[data-page="home"]
    ========================================================================== */
 
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap");
 
 /* ---------- Palette & fonts (only exist while the home page is rendered) ---------- */
-.user-portal:has(.home-root) {
+.user-portal[data-page="home"] {
   --h-plum: #2a1530;
   --h-aubergine: #4a2549;
   --h-blush: #ecd6d0;
@@ -36,7 +36,7 @@
 /* ==========================================================================
    HEADER  (transparent, floating over the hero)
    ========================================================================== */
-.user-portal:has(.home-root) .site-header {
+.user-portal[data-page="home"] .site-header {
   position: absolute;
   top: 0; left: 0; right: 0;
   z-index: 30;
@@ -45,42 +45,42 @@
   background: linear-gradient(180deg, rgba(34, 14, 38, .78) 0%, rgba(34, 14, 38, 0) 100%);
   box-shadow: none;
 }
-.user-portal:has(.home-root) .brand { gap: 14px; }
-.user-portal:has(.home-root) .brand-mark {
+.user-portal[data-page="home"] .brand { gap: 14px; }
+.user-portal[data-page="home"] .brand-mark {
   width: 46px; height: 46px;
   border: 1px solid var(--h-blush);
   color: var(--h-blush);
   font-family: var(--h-serif);
   font-size: 15px; font-weight: 600; letter-spacing: .08em;
 }
-.user-portal:has(.home-root) .brand-hi {
+.user-portal[data-page="home"] .brand-hi {
   font-family: var(--h-sans); font-weight: 400; font-size: 12px;
   letter-spacing: .04em; color: var(--h-blush); opacity: .9;
 }
-.user-portal:has(.home-root) .brand-en {
+.user-portal[data-page="home"] .brand-en {
   font-family: var(--h-serif); font-size: 16px; font-weight: 500;
   letter-spacing: .09em; text-transform: uppercase; opacity: 1; margin-top: 2px; color: #fff;
 }
-.user-portal:has(.home-root) .nav { gap: 34px; align-items: center; font-size: 12px; }
-.user-portal:has(.home-root) .nav a,
-.user-portal:has(.home-root) .nav .user-auth-button {
+.user-portal[data-page="home"] .nav { gap: 34px; align-items: center; font-size: 12px; }
+.user-portal[data-page="home"] .nav a,
+.user-portal[data-page="home"] .nav .user-auth-button {
   font-family: var(--h-sans);
   font-weight: 500;
   letter-spacing: .2em;
   text-transform: uppercase;
   color: #fff;
 }
-.user-portal:has(.home-root) .nav > a:not(.user-auth-link) {
+.user-portal[data-page="home"] .nav > a:not(.user-auth-link) {
   padding: 8px 0;
   border-bottom: 1px solid transparent;
   transition: border-color .25s, color .25s;
 }
-.user-portal:has(.home-root) .nav > a:not(.user-auth-link):hover {
+.user-portal[data-page="home"] .nav > a:not(.user-auth-link):hover {
   border-bottom-color: var(--h-copper);
   color: var(--h-blush);
 }
-.user-portal:has(.home-root) .nav .user-auth-link,
-.user-portal:has(.home-root) .nav .user-auth-button {
+.user-portal[data-page="home"] .nav .user-auth-link,
+.user-portal[data-page="home"] .nav .user-auth-button {
   padding: 11px 24px;
   border: 1px solid var(--h-copper);
   border-radius: 0;
@@ -88,8 +88,8 @@
   background: rgba(185, 118, 58, .12);
   transition: background .25s, color .25s;
 }
-.user-portal:has(.home-root) .nav .user-auth-link:hover,
-.user-portal:has(.home-root) .nav .user-auth-button:hover {
+.user-portal[data-page="home"] .nav .user-auth-link:hover,
+.user-portal[data-page="home"] .nav .user-auth-button:hover {
   background: var(--h-copper);
 }
 
@@ -407,20 +407,20 @@
 /* ==========================================================================
    FOOTER (home page only)
    ========================================================================== */
-.user-portal:has(.home-root) .site-footer {
+.user-portal[data-page="home"] .site-footer {
   margin-top: 96px; min-height: 120px; padding: 34px var(--h-gutter);
   background: var(--h-plum); border-top: 1px solid rgba(236, 214, 208, .16);
 }
-.user-portal:has(.home-root) .footer-brand .brand-mark {
+.user-portal[data-page="home"] .footer-brand .brand-mark {
   border-color: var(--h-blush); color: var(--h-blush); font-family: var(--h-serif);
 }
-.user-portal:has(.home-root) .footer-brand .brand-hi { color: var(--h-blush); font-weight: 400; }
-.user-portal:has(.home-root) .footer-brand .brand-en {
+.user-portal[data-page="home"] .footer-brand .brand-hi { color: var(--h-blush); font-weight: 400; }
+.user-portal[data-page="home"] .footer-brand .brand-en {
   font-family: var(--h-serif); font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: #fff;
 }
-.user-portal:has(.home-root) .footer-links { gap: 28px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
-.user-portal:has(.home-root) .footer-links a { color: var(--h-blush); transition: color .25s; }
-.user-portal:has(.home-root) .footer-links a:hover { color: var(--h-copper); }
+.user-portal[data-page="home"] .footer-links { gap: 28px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
+.user-portal[data-page="home"] .footer-links a { color: var(--h-blush); transition: color .25s; }
+.user-portal[data-page="home"] .footer-links a:hover { color: var(--h-copper); }
 
 /* ==========================================================================
    RESPONSIVE
@@ -433,14 +433,14 @@
 }
 
 @media (max-width: 800px) {
-  .user-portal:has(.home-root) .site-header {
+  .user-portal[data-page="home"] .site-header {
     height: auto; padding: 16px var(--h-gutter) 18px; gap: 14px;
     background: rgba(34, 14, 38, .88);
   }
-  .user-portal:has(.home-root) .nav { gap: 14px 18px; flex-wrap: wrap; justify-content: flex-start; }
-  .user-portal:has(.home-root) .nav > a:not(.user-auth-link) { padding: 6px 0; }
-  .user-portal:has(.home-root) .nav .user-auth-link,
-  .user-portal:has(.home-root) .nav .user-auth-button { width: auto; padding: 9px 16px; }
+  .user-portal[data-page="home"] .nav { gap: 14px 18px; flex-wrap: wrap; justify-content: flex-start; }
+  .user-portal[data-page="home"] .nav > a:not(.user-auth-link) { padding: 6px 0; }
+  .user-portal[data-page="home"] .nav .user-auth-link,
+  .user-portal[data-page="home"] .nav .user-auth-button { width: auto; padding: 9px 16px; }
 
   .user-portal .home-root .hero-image-placeholder {
     min-height: max(620px, 100svh); padding-top: 220px; padding-bottom: 130px;
@@ -458,7 +458,7 @@
   .user-portal .home-root .home-note { align-items: flex-start; padding: 24px; }
   .user-portal .home-root .simple-section { padding-top: 72px; }
   .user-portal .home-root #contact { margin-top: 72px; padding-top: 52px; padding-bottom: 56px; }
-  .user-portal:has(.home-root) .site-footer { margin-top: 72px; align-items: flex-start; }
+  .user-portal[data-page="home"] .site-footer { margin-top: 72px; align-items: flex-start; }
 }
 
 /* Tariff table becomes stacked cards on phones (no sideways scrolling) */
