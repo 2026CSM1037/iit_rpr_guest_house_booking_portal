@@ -14,8 +14,10 @@ _creds: Optional[Credentials] = None
 
 
 class ApiError(Exception):
-    def _init_(self, code: str, status: int):
-        self.code, self.status = code, status
+    def __init__(self, code: str, status: int):
+        super().__init__(code)
+        self.code = code
+        self.status = status
 
 
 def _svc():
